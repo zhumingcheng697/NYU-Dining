@@ -1,11 +1,11 @@
 const fetch = require("node-fetch");
 const parseXmlStr = require("xml2js").parseString;
 
-const locationJsonUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.json";
-const locationXmlUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.xml";
+const locationsJsonUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.json";
+const locationsXmlUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.xml";
 
-let locationJson;
-let locationXml;
+let locationsJson;
+let locationsXml;
 
 /**
  * Makes the console logs colorful.
@@ -45,59 +45,59 @@ const logStyle = {
     }
 };
 
-function fetchLocationJson() {
-    fetch(locationJsonUrl)
+function fetchLocationsJson() {
+    fetch(locationsJsonUrl)
         .then(res => {
-            console.log(`${logStyle.fg.green}Location JSON load succeeded${logStyle.reset}`);
+            console.log(`${logStyle.fg.green}"locations.json" load succeeded${logStyle.reset}`);
             return res.text();
         }).then(text => {
             try {
-                locationJson = JSON.parse(text);
-                console.log(`${logStyle.fg.green}Location JSON parse succeeded${logStyle.reset}`);
+                locationsJson = JSON.parse(text);
+                console.log(`${logStyle.fg.green}"locations.json" parse succeeded${logStyle.reset}`);
 
-                if (locationJson.length > 0) {
-                    console.log(`${logStyle.fg.green}${locationJson.length} location${locationJson.length === 1 ? "" : "s"} found in Location JSON${logStyle.reset}`);
-                    console.log(locationJson)
-                    fetchLocationXml();
+                if (locationsJson.length > 0) {
+                    console.log(`${logStyle.fg.green}${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} found in "locations.json"${logStyle.reset}`);
+                    console.log(locationsJson)
+                    fetchLocationsXml();
                 } else {
-                    console.error(`${logStyle.fg.red}No locations found in Location JSON${logStyle.reset}`);
+                    console.error(`${logStyle.fg.red}No locations found in "locations.json"${logStyle.reset}`);
                 }
             } catch (e) {
-                console.error(`${logStyle.fg.red}Location JSON parse failed${logStyle.reset}`);
+                console.error(`${logStyle.fg.red}"locations.json" parse failed${logStyle.reset}`);
             }
         }).catch(() => {
-            console.error(`${logStyle.fg.red}Location JSON load failed${logStyle.reset}`);
+            console.error(`${logStyle.fg.red}"locations.json" load failed${logStyle.reset}`);
         });
 }
 
-function fetchLocationXml() {
-    fetch(locationXmlUrl)
+function fetchLocationsXml() {
+    fetch(locationsXmlUrl)
         .then(res => {
-            console.log(`${logStyle.fg.green}Location XML load succeeded${logStyle.reset}`);
+            console.log(`${logStyle.fg.green}"locations.xml" load succeeded${logStyle.reset}`);
             return res.text();
         }).then(text => {
             parseXmlStr(text, (err, xml) => {
                 if (xml) {
-                    console.log(`${logStyle.fg.green}Location XML parse succeeded${logStyle.reset}`);
+                    console.log(`${logStyle.fg.green}"locations.xml" parse succeeded${logStyle.reset}`);
                     try {
-                        locationXml = xml["locations"]["location"];
+                        locationsXml = xml["locations"]["location"];
 
-                        if (locationXml.length > 0) {
-                            console.log(`${logStyle.fg.green}${locationXml.length} location${locationXml.length === 1 ? "" : "s"} found in Location XML${logStyle.reset}`);
-                            console.log(locationXml)
+                        if (locationsXml.length > 0) {
+                            console.log(`${logStyle.fg.green}${locationsXml.length} location${locationsXml.length === 1 ? "" : "s"} found in "locations.xml"${logStyle.reset}`);
+                            console.log(locationsXml)
                         } else {
-                            console.error(`${logStyle.fg.red}No locations found in Location XML${logStyle.reset}`);
+                            console.error(`${logStyle.fg.red}No locations found in "locations.xml"${logStyle.reset}`);
                         }
                     } catch (e) {
-                        console.error(`${logStyle.fg.red}"Locations" field not found in Location XML${logStyle.reset}`);
+                        console.error(`${logStyle.fg.red}"Locations" field do not exist in "locations.xml"${logStyle.reset}`);
                     }
                 } else {
-                    console.error(`${logStyle.fg.red}Location XML parse failed${logStyle.reset}`);
+                    console.error(`${logStyle.fg.red}"locations.xml" parse failed${logStyle.reset}`);
                 }
             });
         }).catch(() => {
-            console.error(`${logStyle.fg.red}Location XML load failed${logStyle.reset}`);
+            console.error(`${logStyle.fg.red}"locations.xml" load failed${logStyle.reset}`);
         });
 }
 
-fetchLocationJson();
+fetchLocationsJson();
