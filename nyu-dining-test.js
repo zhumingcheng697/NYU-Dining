@@ -1,7 +1,11 @@
 const fetch = require("node-fetch");
+const parseXmlStr = require("xml2js").parseString;
 
 const locationJsonUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.json";
 const locationXmlUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.xml";
+
+let locationJson;
+let locationXml;
 
 /**
  * Makes the console logs colorful.
@@ -41,18 +45,42 @@ const logStyle = {
     }
 };
 
-fetch(locationJsonUrl)
-    .then(res => res.json())
-    .then(json => {
-        console.log(json);
-    }).catch(() => {
-        console.error(`${logStyle.fg.red}Location JSON load failed${logStyle.reset}`);
-    });
+function fetchLocationJson() {
+    fetch(locationJsonUrl)
+        .then(res => {
+            console.log(`${logStyle.fg.green}Location JSON load succeeded${logStyle.reset}`);
+            return res.text();
+        }).then(text => {
+            try {
+                locationJson = JSON.parse(text);
+                console.log(`${logStyle.fg.green}Location JSON parse succeeded${logStyle.reset}`);
+                fetchLocationXml();
+            } catch (e) {
+                console.error(`${logStyle.fg.red}Location JSON parse failed${logStyle.reset}`);
+            }
+        }).catch(() => {
+            console.error(`${logStyle.fg.red}Location JSON load failed${logStyle.reset}`);
+        });
+}
 
-fetch(locationXmlUrl)
-    .then(res => res.text())
-    .then(json => {
-        console.log(json);
-    }).catch(() => {
-        console.error(`${logStyle.fg.red}Location XML load failed${logStyle.reset}`);
-    });
+function fetchLocationXml() {
+    fetch(locationXmlUrl)
+        .then(res => {
+            console.log(`${logStyle.fg.green}Location XML load succeeded${logStyle.reset}`);
+            return res.text();
+        }).then(text => {
+            parseXmlStr(text, (err, xml) => {
+                if (xml) {
+                    locationXml = xml;
+                    console.log(`${logStyle.fg.green}Location XML parse succeeded${logStyle.reset}`);
+                    // console.log(xml);
+                } else {
+                    console.error(`${logStyle.fg.red}Location XML parse failed${logStyle.reset}`);
+                }
+            });
+        }).catch(() => {
+            console.error(`${logStyle.fg.red}Location XML load failed${logStyle.reset}`);
+        });
+}
+
+fetchLocationJson();
