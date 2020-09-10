@@ -1,7 +1,7 @@
 const fetch = require("node-fetch");
 
-const mainJsonUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.json";
-const mainXmlUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.xml";
+const locationJsonUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.json";
+const locationXmlUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.xml";
 
 /**
  * Makes the console logs colorful.
@@ -41,10 +41,18 @@ const logStyle = {
     }
 };
 
-fetch(mainJsonUrl, {method: "Get"})
+fetch(locationJsonUrl)
     .then(res => res.json())
     .then(json => {
         console.log(json);
     }).catch(() => {
-        console.error(`${logStyle.fg.red}Main JSON load failed${logStyle.reset}`);
+        console.error(`${logStyle.fg.red}Location JSON load failed${logStyle.reset}`);
+    });
+
+fetch(locationXmlUrl)
+    .then(res => res.text())
+    .then(json => {
+        console.log(json);
+    }).catch(() => {
+        console.error(`${logStyle.fg.red}Location XML load failed${logStyle.reset}`);
     });
