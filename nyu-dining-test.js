@@ -54,7 +54,14 @@ function fetchLocationJson() {
             try {
                 locationJson = JSON.parse(text);
                 console.log(`${logStyle.fg.green}Location JSON parse succeeded${logStyle.reset}`);
-                fetchLocationXml();
+
+                if (locationJson.length > 0) {
+                    console.log(`${logStyle.fg.green}${locationJson.length} location${locationJson.length === 1 ? "" : "s"} found in Location JSON${logStyle.reset}`);
+                    console.log(locationJson)
+                    fetchLocationXml();
+                } else {
+                    console.error(`${logStyle.fg.red}No locations found in Location JSON${logStyle.reset}`);
+                }
             } catch (e) {
                 console.error(`${logStyle.fg.red}Location JSON parse failed${logStyle.reset}`);
             }
@@ -71,9 +78,19 @@ function fetchLocationXml() {
         }).then(text => {
             parseXmlStr(text, (err, xml) => {
                 if (xml) {
-                    locationXml = xml;
                     console.log(`${logStyle.fg.green}Location XML parse succeeded${logStyle.reset}`);
-                    // console.log(xml);
+                    try {
+                        locationXml = xml["locations"]["location"];
+
+                        if (locationXml.length > 0) {
+                            console.log(`${logStyle.fg.green}${locationXml.length} location${locationXml.length === 1 ? "" : "s"} found in Location XML${logStyle.reset}`);
+                            console.log(locationXml)
+                        } else {
+                            console.error(`${logStyle.fg.red}No locations found in Location XML${logStyle.reset}`);
+                        }
+                    } catch (e) {
+                        console.error(`${logStyle.fg.red}"Locations" field not found in Location XML${logStyle.reset}`);
+                    }
                 } else {
                     console.error(`${logStyle.fg.red}Location XML parse failed${logStyle.reset}`);
                 }
