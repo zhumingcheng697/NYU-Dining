@@ -53,6 +53,12 @@ function fetchLocationsJson() {
         }).then(text => {
             try {
                 locationsJson = JSON.parse(text);
+                locationsJson.forEach(loc => {
+                    loc["schedules"] = typeof loc["schedules"] === "undefined" ? -1 : loc["schedules"].length;
+                    delete loc["address"];
+                    delete loc["type"];
+                });
+
                 console.log(`${logStyle.fg.green}"locations.json" parse succeeded${logStyle.reset}`);
 
                 if (locationsJson.length > 0) {
@@ -82,14 +88,34 @@ function fetchLocationsXml() {
                     try {
                         locationsXml = xml["locations"]["location"];
 
+                        locationsXml.forEach(loc => {
+                            try {
+                                loc["name"] = loc["name"][0];
+                                loc["mapName"] = loc["mapName"][0];
+
+                                if (loc.name === loc.mapName) {
+                                    delete loc.mapName;
+                                } else {
+                                    console.error(`${logStyle.fg.red}Location name "${loc.name}" is not the same as map name "${loc.mapName}" in "locations.xml"${logStyle.reset}`);
+                                }
+
+                                loc["id"] = loc["eventsFeedConfig"][0]["locationID"][0];
+                                loc["menuURL"] = loc["eventsFeedConfig"][0]["menuURL"][0];
+                                delete loc["eventsFeedConfig"];
+                            } catch (e) {
+                                console.error(`${logStyle.fg.red}"eventsFeedConfig" fields do not exist for location "${loc["name"]}" in "locations.xml"${logStyle.reset}`);
+                                // process.exit(1)
+                            }
+                        })
+
                         if (locationsXml.length > 0) {
                             console.log(`${logStyle.fg.green}${locationsXml.length} location${locationsXml.length === 1 ? "" : "s"} found in "locations.xml"${logStyle.reset}`);
-                            console.log(locationsXml)
+                            console.log(locationsXml);
                         } else {
                             console.error(`${logStyle.fg.red}No locations found in "locations.xml"${logStyle.reset}`);
                         }
                     } catch (e) {
-                        console.error(`${logStyle.fg.red}"Locations" field do not exist in "locations.xml"${logStyle.reset}`);
+                        console.error(`${logStyle.fg.red}"Locations" fields do not exist in "locations.xml"${logStyle.reset}`);
                     }
                 } else {
                     console.error(`${logStyle.fg.red}"locations.xml" parse failed${logStyle.reset}`);
