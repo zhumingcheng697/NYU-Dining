@@ -131,15 +131,12 @@ function fetchLocationsXml() {
 
 function validateLocation(jsonIndex = 0) {
     try {
-        let loc = locationsJson[jsonIndex];
+        const loc = locationsJson[jsonIndex];
         console.log(`${logStyle.fg.white}Checking "${loc.name}" in "locations.json" (${jsonIndex + 1}/${locationsJson.length})${logStyle.reset}`);
         if (typeof loc["open"] === "undefined") {
             console.error(`${logStyle.fg.red}Field "open" does not exist for "${loc.name}"${logStyle.reset}`);
-            if (jsonIndex < locationsJson.length - 1) {
-                validateLocation(jsonIndex + 1);
-            }
         } else {
-            let isOpen = loc["open"];
+            const isOpen = loc["open"];
             if (loc.schedules === -1) {
                 console.log(`${isOpen ? logStyle.fg.red : ""}"${loc.name}" is ${isOpen ? `open but` : `closed and`} field "schedules" does not exist${logStyle.reset}`);
             } else if (loc.schedules === 0) {
@@ -147,11 +144,26 @@ function validateLocation(jsonIndex = 0) {
             } else {
                 console.log(`${isOpen ? logStyle.fg.green : ""}"${loc.name}" is ${isOpen ? `open` : `closed`} and has ${loc.schedules} schedule${loc.schedules === 1 ? "" : "s"}${logStyle.reset}`);
             }
+        }
+
+        try {
+            const matchInXml = locationsXml.find(locXml => {
+                return locXml.id === loc.id && (locXml.name === loc.name || locXml.mapName === loc.name);
+            });
+
+            console.log(`${loc["open"] && loc.schedules >= 1 ? (matchInXml ? logStyle.fg.green : logStyle.fg.red) : ""}"${loc.name}" is${matchInXml ? " " : " not "}found in "locations.xml"${logStyle.reset}`);
+
+            if (matchInXml) {
+                const menuUrl = matchInXml.menuURL;
+                console.log(`${menuUrl ? logStyle.fg.green : logStyle.fg.red}Menu URL is${menuUrl ? " " : " not "}found for "${loc.name}" in "locations.xml"${logStyle.reset}`);
+            }
 
             if (jsonIndex < locationsJson.length - 1) {
                 console.log("")
                 validateLocation(jsonIndex + 1);
             }
+        } catch (e) {
+            console.error(`${logStyle.fg.red}Something went wrong when trying to access "${loc.name}" in "locations.xml"${logStyle.reset}`);
         }
     } catch (e) {
         console.error(`${logStyle.fg.red}Something went wrong with location ${jsonIndex} in "locations.json"${logStyle.reset}`);
