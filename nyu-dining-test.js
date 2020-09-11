@@ -64,7 +64,7 @@ function fetchLocationsJson() {
 
                 if (locationsJson.length > 0) {
                     console.log(`${logStyle.fg.green}${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} found in "locations.json"${logStyle.reset}`);
-                    // console.log(locationsJson)
+                    console.log(locationsJson)
                     fetchLocationsXml();
                 } else {
                     console.error(`${logStyle.fg.red}No locations found in "locations.json"${logStyle.reset}`);
@@ -111,7 +111,7 @@ function fetchLocationsXml() {
                             })
 
                             console.log(`${logStyle.fg.green}${locationsXml.length} location${locationsXml.length === 1 ? "" : "s"} found in "locations.xml"${logStyle.reset}`);
-                            // console.log(locationsXml);
+                            console.log(locationsXml);
                             console.log("");
                             validateLocation(0);
                         } else {
@@ -156,6 +156,10 @@ function validateLocation(jsonIndex = 0) {
             if (matchInXml) {
                 const menuUrl = matchInXml.menuURL;
                 console.log(`${menuUrl ? logStyle.fg.green : logStyle.fg.red}Menu URL is${menuUrl ? " " : " not "}found for "${loc.name}" in "locations.xml"${logStyle.reset}`);
+                if (menuUrl) {
+                    const isIdMatch = menuUrl.endsWith(`${matchInXml.id}.json`);
+                    console.log(`${isIdMatch ? logStyle.fg.green : logStyle.fg.red}Menu URL ${isIdMatch ? "matches" : `"${menuUrl}" does not match`} location id${isIdMatch ? " " : ` "${matchInXml.id}" `}for "${loc.name}"${logStyle.reset}`);
+                }
             }
 
             if (jsonIndex < locationsJson.length - 1) {
