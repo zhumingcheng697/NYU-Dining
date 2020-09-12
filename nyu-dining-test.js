@@ -166,10 +166,12 @@ function fetchLocationsXml() {
  */
 function validateLocation(jsonIndex = 0) {
     function validateNext() {
-        if (jsonIndex < locationsJson.length - 1) {
-            console.log("")
-            validateLocation(jsonIndex + 1);
-        }
+        setTimeout(() => {
+            if (jsonIndex < locationsJson.length - 1) {
+                console.log("")
+                validateLocation(jsonIndex + 1);
+            }
+        }, 100);
     }
 
     try {
@@ -208,9 +210,11 @@ function validateLocation(jsonIndex = 0) {
             }
         } catch (e) {
             console.error(`${logStyle.fg.red}Something went wrong when trying to access "${loc.name}" in "locations.xml"${logStyle.reset}`);
+            validateNext();
         }
     } catch (e) {
         console.error(`${logStyle.fg.red}Something went wrong with location ${jsonIndex} in "locations.json"${logStyle.reset}`);
+        validateNext();
     }
 }
 
@@ -229,24 +233,17 @@ function fetchMenu(url, location = "", completion = () => {}) {
             return res.text();
         }).then(text => {
             try {
-                JSON.parse(text);
-                // console.log(JSON.parse(text));
-                // console.log(JSON.parse(text));
-                // locationsJson.forEach(loc => {
-                //     loc["schedules"] = typeof loc["schedules"] === "undefined" ? -1 : loc["schedules"].length;
-                //     delete loc["address"];
-                //     delete loc["type"];
-                // });
-                //
-                // console.log(`${logStyle.fg.green}"locations.json" parse succeeded${logStyle.reset}`);
-                //
-                // if (locationsJson.length > 0) {
-                //     console.log(`${logStyle.fg.green}${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} found in "locations.json"${logStyle.reset}`);
-                //     // console.log(locationsJson)
-                //     fetchLocationsXml();
-                // } else {
-                //     console.error(`${logStyle.fg.red}No locations found in "locations.json"${logStyle.reset}`);
-                // }
+                let menu = JSON.parse(text);
+                console.log(`${logStyle.fg.green}Menu parse succeeded ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`);
+                menu["menus"] = (typeof menu["menus"] === "undefined" ? -1 : menu["menus"].length);
+
+                if (menu.menus === -1) {
+                    console.error(`${logStyle.fg.red}Field "menus" does not exist ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`);
+                } else if (menu.menus === 0) {
+                    console.error(`${logStyle.fg.red}No menus found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`);
+                } else {
+                    console.log(`${logStyle.fg.green}${menu.menus} menu${menu.menus === 1 ? "" : "s"} found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`);
+                }
                 completion();
             } catch (e) {
                 console.error(`${logStyle.fg.red}Menu parse failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`);
