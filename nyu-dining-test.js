@@ -173,6 +173,13 @@ function fetchLocationsXml() {
  * @return {void}
  */
 function validateLocation(jsonIndex = 0) {
+    /**
+     * Runs validateLocation on the next location in locationsJson, if there is one, or console log the testing report
+     *
+     * @see validateLocation
+     * @see locationsJson
+     * @return {void}
+     */
     function validateNext() {
         if (jsonIndex < locationsJson.length - 1) {
             setTimeout(() => {
@@ -182,12 +189,7 @@ function validateLocation(jsonIndex = 0) {
         } else {
             console.log("");
             console.log(`${logStyle.fg.white}------All tests completed------${logStyle.reset}`);
-            if (passedLocations.length > 0) {
-                console.log(`${logStyle.fg.green}The following ${passedLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" passed all tests successfully${logStyle.reset}`);
-                console.log(passedLocations.join("\n"));
-            } else {
-                console.error(`${logStyle.fg.red}All locations in "locations.json" failed some or all tests${logStyle.reset}`);
-            }
+            validationReport();
         }
     }
 
@@ -271,6 +273,23 @@ function fetchMenu(url, location, completion = () => {}) {
             console.error(`${logStyle.fg.red}Menu load failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`);
             completion();
         });
+}
+
+/**
+ * Logs a comprehensive report for validateLocation and fetchMenu result for all locations in locationsJson
+ *
+ * @see validateLocation
+ * @see fetchMenu
+ * @see locationsJson
+ * @return {void}
+ */
+function validationReport() {
+    if (passedLocations.length > 0) {
+        console.log(`${logStyle.fg.green}The following ${passedLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" passed all tests successfully${logStyle.reset}`);
+        console.log(passedLocations.join(", "));
+    } else {
+        console.error(`${logStyle.fg.red}All locations in "locations.json" failed some or all tests${logStyle.reset}`);
+    }
 }
 
 fetchLocationsJson();
