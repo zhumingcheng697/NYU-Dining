@@ -21,12 +21,25 @@ let locationsJson;
 let locationsXml;
 
 /**
- * An array of name of locations in locationsJson that passed ALL tests
+ * An array of name of locations in locationsJson that passed ALL tests (validateLocation and fetchMenu)
  *
+ * @see validateLocation
+ * @see fetchMenu
  * @see locationsJson
  * @type {string[]}
  */
 let passedLocations = [];
+
+/**
+ * An array of name of locations in locationsJson that passed validateLocation but failed fetchMenu
+ *
+ * @see validateLocation
+ * @see fetchMenu
+ * @see locationsJson
+ * @see locationsXml
+ * @type {string[]}
+ */
+let menuIssueLocations = [];
 
 /**
  * Makes the console logs colorful.
@@ -258,8 +271,10 @@ function fetchMenu(url, location, completion = () => {}) {
 
                 if (menu.menus === -1) {
                     console.error(`${logStyle.fg.red}Field "menus" does not exist ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`);
+                    menuIssueLocations.push(location);
                 } else if (menu.menus === 0) {
                     console.error(`${logStyle.fg.red}No menus found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`);
+                    menuIssueLocations.push(location);
                 } else {
                     console.log(`${logStyle.fg.green}${menu.menus} menu${menu.menus === 1 ? "" : "s"} found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`);
                     passedLocations.push(location);
@@ -267,10 +282,12 @@ function fetchMenu(url, location, completion = () => {}) {
                 completion();
             } catch (e) {
                 console.error(`${logStyle.fg.red}Menu parse failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`);
+                menuIssueLocations.push(location);
                 completion();
             }
         }).catch(() => {
             console.error(`${logStyle.fg.red}Menu load failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`);
+            menuIssueLocations.push(location);
             completion();
         });
 }
@@ -285,8 +302,15 @@ function fetchMenu(url, location, completion = () => {}) {
  */
 function validationReport() {
     if (passedLocations.length > 0) {
-        console.log(`${logStyle.fg.green}The following ${passedLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" passed all tests successfully${logStyle.reset}`);
+        console.log(`${logStyle.fg.green}The following ${passedLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" passed ALL tests successfully${logStyle.reset}`);
         console.log(passedLocations.join(", "));
+
+        console.log("");
+
+        if (menuIssueLocations.length > 0) {
+            console.log(`${logStyle.fg.red}The following ${menuIssueLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${menuIssueLocations.length === 1 ? "has" : "have"} a match in "locations.xml" but ran into issues when loading ${menuIssueLocations.length === 1 ? "its menu" : "their respective menus"}${logStyle.reset}`);
+            console.log(menuIssueLocations.join(", "));
+        }
     } else {
         console.error(`${logStyle.fg.red}All locations in "locations.json" failed some or all tests${logStyle.reset}`);
     }
