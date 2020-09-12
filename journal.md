@@ -14,4 +14,16 @@
 
 - Enhanced ability to handle exceptions when parsing JSON and XML and validating location data
 
-- Added ability to validate each location in the parsed JSON and check its `open` status and presence and amount of `schedules`.
+- Added ability to validate each location in the parsed JSON and check its `open` status and presence and amount of `schedules`
+
+### Friday: September 11, 2020 (5 hours)
+
+- Added ability to check if locations from the parsed JSON also exist under the same `name` and `id` in the parsed XML
+
+- Added ability to check if the `menuUrl` of a location in the parsed XML matches its `id`
+
+- Added ability to fetch and parse JSON files from the `menuUrl` of each location in the parsed XML, and check the presence and amount of its `menus`
+
+- Added ability to log locations from the parsed JSON that passed all the tests, those that have a match in the parsed XML but failed to load menus, and those that do not have a match in the parsed XML
+
+- Added documentation to most functions and important variables
