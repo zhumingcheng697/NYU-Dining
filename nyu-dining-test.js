@@ -1,4 +1,4 @@
-const fetch = require("node-fetch");
+const fetchFile = require("node-fetch");
 const parseXmlStr = require("xml2js").parseString;
 
 const locationsJsonUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.json";
@@ -67,7 +67,7 @@ const logStyle = {
  */
 function fetchLocationsJson() {
     console.log(`${logStyle.fg.white}------Loading "locations.json"------${logStyle.reset}`);
-    fetch(locationsJsonUrl)
+    fetchFile(locationsJsonUrl)
         .then(res => {
             console.log(`${logStyle.fg.green}"locations.json" load succeeded${logStyle.reset}`);
             return res.text();
@@ -106,7 +106,7 @@ function fetchLocationsJson() {
  */
 function fetchLocationsXml() {
     console.log(`${logStyle.fg.white}------Loading "locations.xml"------${logStyle.reset}`);
-    fetch(locationsXmlUrl)
+    fetchFile(locationsXmlUrl)
         .then(res => {
             console.log(`${logStyle.fg.green}"locations.xml" load succeeded${logStyle.reset}`);
             return res.text();
@@ -138,9 +138,9 @@ function fetchLocationsXml() {
                             })
 
                             console.log(`${logStyle.fg.green}${locationsXml.length} location${locationsXml.length === 1 ? "" : "s"} found in "locations.xml"${logStyle.reset}`);
-                            console.log(locationsXml);
+                            // console.log(locationsXml);
                             console.log("");
-                            validateLocation(0);
+                            validateLocation();
                         } else {
                             console.error(`${logStyle.fg.red}No locations found in "locations.xml"${logStyle.reset}`);
                         }
@@ -165,6 +165,13 @@ function fetchLocationsXml() {
  * @return {void}
  */
 function validateLocation(jsonIndex = 0) {
+    function validateNext() {
+        if (jsonIndex < locationsJson.length - 1) {
+            console.log("")
+            validateLocation(jsonIndex + 1);
+        }
+    }
+
     try {
         const loc = locationsJson[jsonIndex];
         console.log(`${logStyle.fg.white}Checking "${loc.name}" in "locations.json" (${jsonIndex + 1}/${locationsJson.length})${logStyle.reset}`);
@@ -194,12 +201,10 @@ function validateLocation(jsonIndex = 0) {
                 if (menuUrl) {
                     const isIdMatch = menuUrl.endsWith(`${matchInXml.id}.json`);
                     console.log(`${isIdMatch ? logStyle.fg.green : logStyle.fg.red}Menu URL ${isIdMatch ? "matches" : `"${menuUrl}" does not match`} location id${isIdMatch ? " " : ` "${matchInXml.id}" `}for "${loc.name}"${logStyle.reset}`);
+                    fetchMenu(menuUrl, loc.name, validateNext);
                 }
-            }
-
-            if (jsonIndex < locationsJson.length - 1) {
-                console.log("")
-                validateLocation(jsonIndex + 1);
+            } else {
+                validateNext();
             }
         } catch (e) {
             console.error(`${logStyle.fg.red}Something went wrong when trying to access "${loc.name}" in "locations.xml"${logStyle.reset}`);
@@ -207,6 +212,50 @@ function validateLocation(jsonIndex = 0) {
     } catch (e) {
         console.error(`${logStyle.fg.red}Something went wrong with location ${jsonIndex} in "locations.json"${logStyle.reset}`);
     }
+}
+
+/**
+ * Fetches, parses, and validates menu data from the given URL for a location
+ *
+ * @param url {string} URL of menu JSON file to fetch, parse, and validate
+ * @param location {string} Name of the location to fetch menu for
+ * @param completion {function} Completion handler
+ * @return {void}
+ */
+function fetchMenu(url, location = "", completion = () => {}) {
+    fetchFile(url)
+        .then(res => {
+            console.log(`${logStyle.fg.green}Menu load succeeded ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`);
+            return res.text();
+        }).then(text => {
+            try {
+                JSON.parse(text);
+                // console.log(JSON.parse(text));
+                // console.log(JSON.parse(text));
+                // locationsJson.forEach(loc => {
+                //     loc["schedules"] = typeof loc["schedules"] === "undefined" ? -1 : loc["schedules"].length;
+                //     delete loc["address"];
+                //     delete loc["type"];
+                // });
+                //
+                // console.log(`${logStyle.fg.green}"locations.json" parse succeeded${logStyle.reset}`);
+                //
+                // if (locationsJson.length > 0) {
+                //     console.log(`${logStyle.fg.green}${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} found in "locations.json"${logStyle.reset}`);
+                //     // console.log(locationsJson)
+                //     fetchLocationsXml();
+                // } else {
+                //     console.error(`${logStyle.fg.red}No locations found in "locations.json"${logStyle.reset}`);
+                // }
+                completion();
+            } catch (e) {
+                console.error(`${logStyle.fg.red}Menu parse failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`);
+                completion();
+            }
+        }).catch(() => {
+            console.error(`${logStyle.fg.red}Menu load failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`);
+            completion();
+        });
 }
 
 fetchLocationsJson();
