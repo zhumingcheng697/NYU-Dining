@@ -36,10 +36,18 @@ let passedLocations = [];
  * @see validateLocation
  * @see fetchMenu
  * @see locationsJson
- * @see locationsXml
  * @type {string[]}
  */
-let menuIssueLocations = [];
+let noMenuLocations = [];
+
+/**
+ * An array of name of locations in locationsJson that failed validateLocation
+ *
+ * @see validateLocation
+ * @see locationsJson
+ * @type {string[]}
+ */
+let noXmlMatchLocations = [];
 
 /**
  * Makes the console logs colorful.
@@ -202,7 +210,7 @@ function validateLocation(jsonIndex = 0) {
         } else {
             console.log("");
             console.log(`${logStyle.fg.white}------All tests completed------${logStyle.reset}`);
-            validationReport();
+            passedLocationsReport(true);
         }
     }
 
@@ -238,10 +246,12 @@ function validateLocation(jsonIndex = 0) {
                     fetchMenu(menuUrl, loc.name, validateNext);
                 }
             } else {
+                noXmlMatchLocations.push(loc.name);
                 validateNext();
             }
         } catch (e) {
             console.error(`${logStyle.fg.red}Something went wrong when trying to access "${loc.name}" in "locations.xml"${logStyle.reset}`);
+            noXmlMatchLocations.push(loc.name);
             validateNext();
         }
     } catch (e) {
@@ -271,10 +281,10 @@ function fetchMenu(url, location, completion = () => {}) {
 
                 if (menu.menus === -1) {
                     console.error(`${logStyle.fg.red}Field "menus" does not exist ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`);
-                    menuIssueLocations.push(location);
+                    noMenuLocations.push(location);
                 } else if (menu.menus === 0) {
                     console.error(`${logStyle.fg.red}No menus found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`);
-                    menuIssueLocations.push(location);
+                    noMenuLocations.push(location);
                 } else {
                     console.log(`${logStyle.fg.green}${menu.menus} menu${menu.menus === 1 ? "" : "s"} found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`);
                     passedLocations.push(location);
@@ -282,37 +292,86 @@ function fetchMenu(url, location, completion = () => {}) {
                 completion();
             } catch (e) {
                 console.error(`${logStyle.fg.red}Menu parse failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`);
-                menuIssueLocations.push(location);
+                noMenuLocations.push(location);
                 completion();
             }
         }).catch(() => {
             console.error(`${logStyle.fg.red}Menu load failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`);
-            menuIssueLocations.push(location);
+            noMenuLocations.push(location);
             completion();
         });
 }
 
 /**
- * Logs a comprehensive report for validateLocation and fetchMenu result for all locations in locationsJson
+ * Logs names of locations in locationsJson that have passed ALL tests (validateLocation and fetchMenu)
  *
+ * @param showNextStep {boolean} Whether to show noMenuLocationsReport automatically, default to false
+ * @see noMenuLocationsReport
  * @see validateLocation
  * @see fetchMenu
  * @see locationsJson
  * @return {void}
  */
-function validationReport() {
+function passedLocationsReport(showNextStep = false) {
     if (passedLocations.length > 0) {
         console.log(`${logStyle.fg.green}The following ${passedLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" passed ALL tests successfully${logStyle.reset}`);
         console.log(passedLocations.join(", "));
-
-        console.log("");
-
-        if (menuIssueLocations.length > 0) {
-            console.log(`${logStyle.fg.red}The following ${menuIssueLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${menuIssueLocations.length === 1 ? "has" : "have"} a match in "locations.xml" but ran into issues when loading ${menuIssueLocations.length === 1 ? "its menu" : "their respective menus"}${logStyle.reset}`);
-            console.log(menuIssueLocations.join(", "));
-        }
     } else {
         console.error(`${logStyle.fg.red}All locations in "locations.json" failed some or all tests${logStyle.reset}`);
+    }
+
+    if (showNextStep) {
+        console.log("");
+        setTimeout(() => {
+            noMenuLocationsReport(showNextStep);
+        }, 50);
+    }
+}
+
+/**
+ * Logs name of locations in locationsJson that have passed validateLocation but failed fetchMenu
+ *
+ * @param showNextStep {boolean} Whether to show noXmlMatchLocationsReport automatically, default to false
+ * @see noXmlMatchLocationsReport
+ * @see validateLocation
+ * @see fetchMenu
+ * @see locationsJson
+ * @return {void}
+ */
+function noMenuLocationsReport(showNextStep = false) {
+    if (noMenuLocations.length > 0) {
+        console.warn(`${logStyle.fg.red}The following ${noMenuLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noMenuLocations.length === 1 ? "has" : "have"} a match in "locations.xml" but had issue loading menu${noMenuLocations.length === 1 ? "" : "s"}${logStyle.reset}`);
+        console.log(noMenuLocations.join(", "));
+    }
+
+    if (showNextStep) {
+        console.log("");
+        setTimeout(() => {
+            noXmlMatchLocationsReport();
+        }, 50);
+    }
+}
+
+/**
+ * Logs names of locations in locationsJson that have failed validateLocation
+ *
+ * @param showNextStep {boolean} Whether to show the keyboard input prompt automatically, default to false
+ * @see validateLocation
+ * @see fetchMenu
+ * @see locationsJson
+ * @return {void}
+ */
+function noXmlMatchLocationsReport(showNextStep = false) {
+    if (noXmlMatchLocations.length > 0) {
+        console.warn(`${logStyle.fg.red}The following ${noXmlMatchLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noXmlMatchLocations.length === 1 ? "does" : "do"} not have a match in "locations.xml"${logStyle.reset}`);
+        console.log(noXmlMatchLocations.join(", "));
+    }
+
+    if (showNextStep) {
+        console.log("");
+        setTimeout(() => {
+            console.log("Done");
+        }, 50);
     }
 }
 
