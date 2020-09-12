@@ -21,6 +21,14 @@ let locationsJson;
 let locationsXml;
 
 /**
+ * An array of name of locations in locationsJson that passed ALL tests
+ *
+ * @see locationsJson
+ * @type {string[]}
+ */
+let passedLocations = [];
+
+/**
  * Makes the console logs colorful.
  *
  * @link https://stackoverflow.com/a/40560590
@@ -166,12 +174,21 @@ function fetchLocationsXml() {
  */
 function validateLocation(jsonIndex = 0) {
     function validateNext() {
-        setTimeout(() => {
-            if (jsonIndex < locationsJson.length - 1) {
+        if (jsonIndex < locationsJson.length - 1) {
+            setTimeout(() => {
                 console.log("")
                 validateLocation(jsonIndex + 1);
+            }, 50);
+        } else {
+            console.log("");
+            console.log(`${logStyle.fg.white}------All tests completed------${logStyle.reset}`);
+            if (passedLocations.length > 0) {
+                console.log(`${logStyle.fg.green}The following ${passedLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" passed all tests successfully${logStyle.reset}`);
+                console.log(passedLocations.join("\n"));
+            } else {
+                console.error(`${logStyle.fg.red}All locations in "locations.json" failed some or all tests${logStyle.reset}`);
             }
-        }, 100);
+        }
     }
 
     try {
@@ -226,7 +243,7 @@ function validateLocation(jsonIndex = 0) {
  * @param completion {function} Completion handler
  * @return {void}
  */
-function fetchMenu(url, location = "", completion = () => {}) {
+function fetchMenu(url, location, completion = () => {}) {
     fetchFile(url)
         .then(res => {
             console.log(`${logStyle.fg.green}Menu load succeeded ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`);
@@ -243,6 +260,7 @@ function fetchMenu(url, location = "", completion = () => {}) {
                     console.error(`${logStyle.fg.red}No menus found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`);
                 } else {
                     console.log(`${logStyle.fg.green}${menu.menus} menu${menu.menus === 1 ? "" : "s"} found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`);
+                    passedLocations.push(location);
                 }
                 completion();
             } catch (e) {
