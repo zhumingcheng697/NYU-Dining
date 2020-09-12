@@ -4,7 +4,20 @@ const parseXmlStr = require("xml2js").parseString;
 const locationsJsonUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.json";
 const locationsXmlUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.xml";
 
+/**
+ * Object representation of locations parsed from locationsJsonUrl
+ *
+ * @see locationsJsonUrl
+ * @type {Object[]}
+ */
 let locationsJson;
+
+/**
+ * Object representation of locations parsed from locationsXmlUrl
+ *
+ * @see locationsXml
+ * @type {Object[]}
+ */
 let locationsXml;
 
 /**
@@ -45,6 +58,13 @@ const logStyle = {
     }
 };
 
+/**
+ * Fetches, parses, and validates location data from locationsJsonUrl and stores the data in locationsJson
+ *
+ * @see locationsJsonUrl
+ * @see locationsJson
+ * @return {void}
+ */
 function fetchLocationsJson() {
     console.log(`${logStyle.fg.white}------Loading "locations.json"------${logStyle.reset}`);
     fetch(locationsJsonUrl)
@@ -64,7 +84,7 @@ function fetchLocationsJson() {
 
                 if (locationsJson.length > 0) {
                     console.log(`${logStyle.fg.green}${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} found in "locations.json"${logStyle.reset}`);
-                    console.log(locationsJson)
+                    // console.log(locationsJson)
                     fetchLocationsXml();
                 } else {
                     console.error(`${logStyle.fg.red}No locations found in "locations.json"${logStyle.reset}`);
@@ -77,6 +97,13 @@ function fetchLocationsJson() {
         });
 }
 
+/**
+ * Fetches, parses, and validates location data from locationsXmlUrl and stores the data in locationsXml
+ *
+ * @see locationsXmlUrl
+ * @see locationsXml
+ * @return {void}
+ */
 function fetchLocationsXml() {
     console.log(`${logStyle.fg.white}------Loading "locations.xml"------${logStyle.reset}`);
     fetch(locationsXmlUrl)
@@ -129,6 +156,14 @@ function fetchLocationsXml() {
         });
 }
 
+/**
+ * Validates location data in locationsJson and locationsXml
+ *
+ * @param jsonIndex {number} Index of location to validate in locationsJson
+ * @see locationsJson
+ * @see locationsXml
+ * @return {void}
+ */
 function validateLocation(jsonIndex = 0) {
     try {
         const loc = locationsJson[jsonIndex];
