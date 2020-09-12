@@ -50,6 +50,22 @@ let noMenuLocations = [];
 let noXmlMatchLocations = [];
 
 /**
+ * An array of thrown error messages in validateLocation and fetchMenu
+ *
+ * @see validateLocation
+ * @see fetchMenu
+ * @type {string[]}
+ */
+let allErrorMsg = [];
+
+/**
+ * Determines if all test runs are finished
+ *
+ * @type {boolean}
+ */
+let allTestsCompleted = false;
+
+/**
  * Makes the console logs colorful.
  *
  * @link https://stackoverflow.com/a/40560590
@@ -208,6 +224,7 @@ function validateLocation(jsonIndex = 0) {
                 validateLocation(jsonIndex + 1);
             }, 50);
         } else {
+            allTestsCompleted = true;
             console.log("");
             console.log(`${logStyle.fg.white}------All tests completed------${logStyle.reset}`);
             passedLocationsReport(true);
@@ -315,7 +332,7 @@ function fetchMenu(url, location, completion = () => {}) {
 function passedLocationsReport(showNextStep = false) {
     if (passedLocations.length > 0) {
         console.log(`${logStyle.fg.green}The following ${passedLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" passed ALL tests successfully${logStyle.reset}`);
-        console.log(passedLocations.join(", "));
+        console.log(passedLocations.join(showNextStep ? ", " : "\n"));
     } else {
         console.error(`${logStyle.fg.red}All locations in "locations.json" failed some or all tests${logStyle.reset}`);
     }
@@ -341,13 +358,13 @@ function passedLocationsReport(showNextStep = false) {
 function noMenuLocationsReport(showNextStep = false) {
     if (noMenuLocations.length > 0) {
         console.warn(`${logStyle.fg.red}The following ${noMenuLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noMenuLocations.length === 1 ? "has" : "have"} a match in "locations.xml" but had issue loading menu${noMenuLocations.length === 1 ? "" : "s"}${logStyle.reset}`);
-        console.log(noMenuLocations.join(", "));
+        console.log(noMenuLocations.join(showNextStep ? ", " : "\n"));
     }
 
     if (showNextStep) {
         console.log("");
         setTimeout(() => {
-            noXmlMatchLocationsReport();
+            noXmlMatchLocationsReport(showNextStep);
         }, 50);
     }
 }
@@ -364,14 +381,37 @@ function noMenuLocationsReport(showNextStep = false) {
 function noXmlMatchLocationsReport(showNextStep = false) {
     if (noXmlMatchLocations.length > 0) {
         console.warn(`${logStyle.fg.red}The following ${noXmlMatchLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noXmlMatchLocations.length === 1 ? "does" : "do"} not have a match in "locations.xml"${logStyle.reset}`);
-        console.log(noXmlMatchLocations.join(", "));
+        console.log(noXmlMatchLocations.join(showNextStep ? ", " : "\n"));
     }
 
     if (showNextStep) {
         console.log("");
         setTimeout(() => {
-            console.log("Done");
+            console.log("------All Done------");
         }, 50);
+    }
+}
+
+/**
+ * Logs message in console and pushes it to allErrorMsg, if necessary
+ *
+ * @param msg {string} Message to log
+ * @param isError {boolean} Whether the message is an error and whether it should be pushed to allErrorMsg
+ * @param logMethod {string} Method to log (log, warn, or error)
+ * @see allErrorMsg
+ * @return {void}
+ */
+function logAndPush(msg, isError, logMethod = "log") {
+    if (logMethod === "error") {
+        console.error(msg);
+    } else if (logMethod === "warn") {
+        console.warn(msg);
+    } else {
+        console.log(msg);
+    }
+
+    if (isError) {
+        allErrorMsg.push(msg);
     }
 }
 
