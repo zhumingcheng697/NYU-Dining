@@ -178,7 +178,7 @@ function fetchLocationsXml() {
                                     loc["menuURL"] = loc["eventsFeedConfig"][0]["menuURL"][0];
                                     delete loc["eventsFeedConfig"];
                                 } catch (e) {
-                                    console.error(`${logStyle.fg.red}Field "eventsFeedConfig" does not exist for "${loc["name"]}" in "locations.xml"${logStyle.reset}`);
+                                    logAndPush(`${logStyle.fg.red}Field "eventsFeedConfig" does not exist for "${loc["name"]}" in "locations.xml"${logStyle.reset}`, "e");
                                 }
                             })
 
@@ -235,15 +235,15 @@ function validateLocation(jsonIndex = 0) {
         const loc = locationsJson[jsonIndex];
         console.log(`${logStyle.fg.white}Checking "${loc.name}" in "locations.json" (${jsonIndex + 1}/${locationsJson.length})${logStyle.reset}`);
         if (typeof loc["open"] === "undefined") {
-            console.error(`${logStyle.fg.red}Field "open" does not exist for "${loc.name}"${logStyle.reset}`);
+            logAndPush(`${logStyle.fg.red}Field "open" does not exist for "${loc.name}"${logStyle.reset}`, "e");
         } else {
             const isOpen = loc["open"];
             if (loc.schedules === -1) {
-                console.log(`${isOpen ? logStyle.fg.red : ""}"${loc.name}" is ${isOpen ? `open but` : `closed and`} field "schedules" does not exist${logStyle.reset}`);
+                logAndPush(`${isOpen ? logStyle.fg.red : ""}"${loc.name}" is ${isOpen ? `open but` : `closed and`} field "schedules" does not exist${logStyle.reset}`, isOpen ? "e" : "w");
             } else if (loc.schedules === 0) {
-                console.log(`${isOpen ? logStyle.fg.red : ""}"${loc.name}" is ${isOpen ? `open but` : `closed and`} has no schedules${logStyle.reset}`);
+                logAndPush(`${isOpen ? logStyle.fg.red : ""}"${loc.name}" is ${isOpen ? `open but` : `closed and`} has no schedules${logStyle.reset}`, isOpen ? "e" : "w");
             } else {
-                console.log(`${isOpen ? logStyle.fg.green : ""}"${loc.name}" is ${isOpen ? `open` : `closed`} and has ${loc.schedules} schedule${loc.schedules === 1 ? "" : "s"}${logStyle.reset}`);
+                logAndPush(`${isOpen ? logStyle.fg.green : ""}"${loc.name}" is ${isOpen ? `open` : `closed`} and has ${loc.schedules} schedule${loc.schedules === 1 ? "" : "s"}${logStyle.reset}`, isOpen ? "" : "w")
             }
         }
 
@@ -252,14 +252,14 @@ function validateLocation(jsonIndex = 0) {
                 return locXml.id === loc.id && (locXml.name === loc.name || locXml.mapName === loc.name);
             });
 
-            console.log(`${loc["open"] && loc.schedules >= 1 ? (matchInXml ? logStyle.fg.green : logStyle.fg.red) : ""}"${loc.name}" is${matchInXml ? " " : " not "}found in "locations.xml"${logStyle.reset}`);
+            logAndPush(`${loc["open"] && loc.schedules >= 1 ? (matchInXml ? logStyle.fg.green : logStyle.fg.red) : ""}"${loc.name}" is${matchInXml ? " " : " not "}found in "locations.xml"${logStyle.reset}`, loc["open"] && loc.schedules >= 1 ? (matchInXml ? "" : "e") : "w");
 
             if (matchInXml) {
                 const menuUrl = matchInXml.menuURL;
-                console.log(`${menuUrl ? logStyle.fg.green : logStyle.fg.red}Menu URL is${menuUrl ? " " : " not "}found for "${loc.name}" in "locations.xml"${logStyle.reset}`);
+                logAndPush(`${menuUrl ? logStyle.fg.green : logStyle.fg.red}Menu URL is${menuUrl ? " " : " not "}found for "${loc.name}" in "locations.xml"${logStyle.reset}`, menuUrl ? "" : "e");
                 if (menuUrl) {
                     const isIdMatch = menuUrl.endsWith(`${matchInXml.id}.json`);
-                    console.log(`${isIdMatch ? logStyle.fg.green : logStyle.fg.red}Menu URL ${isIdMatch ? "matches" : `"${menuUrl}" does not match`} location id${isIdMatch ? " " : ` "${matchInXml.id}" `}for "${loc.name}"${logStyle.reset}`);
+                    logAndPush(`${isIdMatch ? logStyle.fg.green : logStyle.fg.red}Menu URL ${isIdMatch ? "matches" : `"${menuUrl}" does not match`} location id${isIdMatch ? " " : ` "${matchInXml.id}" `}for "${loc.name}"${logStyle.reset}`, isIdMatch ? "" : "w");
                     fetchMenu(menuUrl, loc.name, validateNext);
                 }
             } else {
@@ -267,12 +267,12 @@ function validateLocation(jsonIndex = 0) {
                 validateNext();
             }
         } catch (e) {
-            console.error(`${logStyle.fg.red}Something went wrong when trying to access "${loc.name}" in "locations.xml"${logStyle.reset}`);
+            logAndPush(`${logStyle.fg.red}Something went wrong when trying to access "${loc.name}" in "locations.xml"${logStyle.reset}`, "e");
             noXmlMatchLocations.push(loc.name);
             validateNext();
         }
     } catch (e) {
-        console.error(`${logStyle.fg.red}Something went wrong with location ${jsonIndex} in "locations.json"${logStyle.reset}`);
+        logAndPush(`${logStyle.fg.red}Something went wrong with location ${jsonIndex} in "locations.json"${logStyle.reset}`, "e");
         validateNext();
     }
 }
@@ -297,10 +297,10 @@ function fetchMenu(url, location, completion = () => {}) {
                 menu["menus"] = (typeof menu["menus"] === "undefined" ? -1 : menu["menus"].length);
 
                 if (menu.menus === -1) {
-                    console.error(`${logStyle.fg.red}Field "menus" does not exist ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`);
+                    logAndPush(`${logStyle.fg.red}Field "menus" does not exist ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`, "e");
                     noMenuLocations.push(location);
                 } else if (menu.menus === 0) {
-                    console.error(`${logStyle.fg.red}No menus found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`);
+                    logAndPush(`${logStyle.fg.red}No menus found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`, "e")
                     noMenuLocations.push(location);
                 } else {
                     console.log(`${logStyle.fg.green}${menu.menus} menu${menu.menus === 1 ? "" : "s"} found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`);
@@ -308,12 +308,12 @@ function fetchMenu(url, location, completion = () => {}) {
                 }
                 completion();
             } catch (e) {
-                console.error(`${logStyle.fg.red}Menu parse failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`);
+                logAndPush(`${logStyle.fg.red}Menu parse failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`, "e");
                 noMenuLocations.push(location);
                 completion();
             }
         }).catch(() => {
-            console.error(`${logStyle.fg.red}Menu load failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`);
+            logAndPush(`${logStyle.fg.red}Menu load failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`, "e");
             noMenuLocations.push(location);
             completion();
         });
@@ -387,7 +387,8 @@ function noXmlMatchLocationsReport(showNextStep = false) {
     if (showNextStep) {
         console.log("");
         setTimeout(() => {
-            console.log("------All Done------");
+            console.log(`${logStyle.fg.white}------All Done------${logStyle.reset}`);
+            // console.log(allErrorMsg.join("\n"));
         }, 50);
     }
 }
@@ -396,23 +397,21 @@ function noXmlMatchLocationsReport(showNextStep = false) {
  * Logs message in console and pushes it to allErrorMsg, if necessary
  *
  * @param msg {string} Message to log
- * @param isError {boolean} Whether the message is an error and whether it should be pushed to allErrorMsg
- * @param logMethod {string} Method to log (log, warn, or error)
+ * @param logMethod {string} Method to log: log (by default), warn (w), or error (e)
  * @see allErrorMsg
  * @return {void}
  */
-function logAndPush(msg, isError, logMethod = "log") {
-    if (logMethod === "error") {
+function logAndPush(msg, logMethod = "log") {
+    if (logMethod === "e" || logMethod === "error") {
         console.error(msg);
-    } else if (logMethod === "warn") {
+    } else if (logMethod === "w" || logMethod === "warn") {
         console.warn(msg);
     } else {
         console.log(msg);
+        return;
     }
 
-    if (isError) {
-        allErrorMsg.push(msg);
-    }
+    allErrorMsg.push(msg);
 }
 
 fetchLocationsJson();
