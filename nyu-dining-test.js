@@ -369,7 +369,7 @@ function passedLocationsReport(showNextStep = false) {
  */
 function noMenuLocationsReport(showNextStep = false) {
     if (noMenuLocations.length > 0) {
-        console.warn(`${logStyle.fg.red}The following ${noMenuLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noMenuLocations.length === 1 ? "has" : "have"} a match in "locations.xml" but had issue loading menu${noMenuLocations.length === 1 ? "" : "s"}${logStyle.reset}`);
+        console.warn(`${logStyle.fg.red}The following ${noMenuLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noMenuLocations.length === 1 ? "has" : "have"} a match in "locations.xml" but had issue accessing menu${noMenuLocations.length === 1 ? "" : "s"}${logStyle.reset}`);
         console.log(noMenuLocations.join(showNextStep ? ", " : "\n"));
     }
 
@@ -465,7 +465,8 @@ rl.on('line', (line) => {
         // } else if (line.toUpperCase() === "R") {
         //     console.log("rerun");
         } else {
-            console.error(`${logStyle.fg.red}Please type in a valid key${logStyle.reset}`)
+            console.error(`${logStyle.fg.red}Please type in a valid key. (E/P/M/X/T)${logStyle.reset}`)
+            return;
         }
 
         console.log("");
