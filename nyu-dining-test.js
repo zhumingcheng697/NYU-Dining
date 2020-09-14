@@ -387,8 +387,8 @@ function noXmlMatchLocationsReport(showNextStep = false) {
     if (showNextStep) {
         console.log("");
         setTimeout(() => {
-            console.log(`${logStyle.fg.white}------All Done------${logStyle.reset}`);
-            setTimeout(locationStatusReport, 50);
+            typeInKeywordPrompt();
+            // setTimeout(locationsResultReport, 50);
             // console.log(allErrorMsg.join("\n"));
         }, 50);
     }
@@ -415,11 +415,20 @@ function logAndPush(msg, logMethod = "log") {
     allErrorMsg.push(msg);
 }
 
-function locationStatusReport() {
+function typeInKeywordPrompt() {
+    console.log(`${logStyle.fg.yellow}Type "E" to see all error messages thrown in the previous run${logStyle.reset}`);
+    console.log(`${logStyle.fg.yellow}Type "P" to see a list of the locations that passed ALL tests${logStyle.reset}`);
+    console.log(`${logStyle.fg.yellow}Type "M" to see a list of the locations that failed the menu test (had issue accessing menus)${logStyle.reset}`);
+    console.log(`${logStyle.fg.yellow}Type "X" to see a list of the locations that failed the XML test (does not have a match in XML)${logStyle.reset}`);
+    console.log(`${logStyle.fg.yellow}Type "T" to see a table of all locations with their names and test results${logStyle.reset}`);
+    console.log(`${logStyle.fg.yellow}Type "R" to rerun the tests on all locations again${logStyle.reset}`);
+}
+
+function locationsResultReport() {
     console.table(locationsJson.map(loc => {
         return {
             location: loc.name,
-            status: (noXmlMatchLocations.includes(loc.name) ? "XML Error" : (noMenuLocations.includes(loc.name) ? "Menu Error" : (passedLocations.includes(loc.name) ? "PASSED" : "Other Error")))
+            result: (noXmlMatchLocations.includes(loc.name) ? "XML Error" : (noMenuLocations.includes(loc.name) ? "Menu Error" : (passedLocations.includes(loc.name) ? "PASSED" : "Other Error")))
         };
     }));
 }
