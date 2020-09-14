@@ -1,3 +1,4 @@
+const readline = require('readline');
 const fetchFile = require("node-fetch");
 const parseXmlStr = require("xml2js").parseString;
 
@@ -102,6 +103,17 @@ const logStyle = {
         crimson: "\x1b[48m"
     }
 };
+
+/**
+ * Reads the keyboard input from the console.
+ *
+ * @link http://logan.tw/posts/2015/12/12/read-lines-from-stdin-in-nodejs/
+ */
+let rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+    terminal: false
+});
 
 /**
  * Fetches, parses, and validates location data from locationsJsonUrl and stores the data in locationsJson
@@ -387,7 +399,7 @@ function noXmlMatchLocationsReport(showNextStep = false) {
     if (showNextStep) {
         console.log("");
         setTimeout(() => {
-            typeInKeywordPrompt();
+            typeKeyPrompt();
             // setTimeout(locationsResultReport, 50);
             // console.log(allErrorMsg.join("\n"));
         }, 50);
@@ -415,13 +427,13 @@ function logAndPush(msg, logMethod = "log") {
     allErrorMsg.push(msg);
 }
 
-function typeInKeywordPrompt() {
+function typeKeyPrompt() {
     console.log(`${logStyle.fg.yellow}Type "E" to see all error messages thrown in the previous run${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "P" to see a list of the locations that passed ALL tests${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "M" to see a list of the locations that failed the menu test (had issue accessing menus)${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "X" to see a list of the locations that failed the XML test (does not have a match in XML)${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "T" to see a table of all locations with their names and test results${logStyle.reset}`);
-    console.log(`${logStyle.fg.yellow}Type "R" to rerun the tests on all locations again${logStyle.reset}`);
+    // console.log(`${logStyle.fg.yellow}Type "R" to rerun the tests on all locations again${logStyle.reset}`);
 }
 
 function locationsResultReport() {
@@ -434,3 +446,29 @@ function locationsResultReport() {
 }
 
 fetchLocationsJson();
+
+/**
+ * Handles keyboard input in the console.
+ */
+rl.on('line', (line) => {
+    if (allTestsCompleted) {
+        if (line.toUpperCase() === "E") {
+            console.log(allErrorMsg.join("\n"));
+        } else if (line.toUpperCase() === "P") {
+            passedLocationsReport();
+        } else if (line.toUpperCase() === "M") {
+            noMenuLocationsReport();
+        } else if (line.toUpperCase() === "X") {
+            noXmlMatchLocationsReport();
+        } else if (line.toUpperCase() === "T") {
+            locationsResultReport();
+        // } else if (line.toUpperCase() === "R") {
+        //     console.log("rerun");
+        } else {
+            console.error(`${logStyle.fg.red}Please type in a valid key${logStyle.reset}`)
+        }
+
+        console.log("");
+        typeKeyPrompt();
+    }
+});
