@@ -148,7 +148,6 @@ function fetchLocationsJson() {
 
                 if (locationsJson.length > 0) {
                     console.log(`${logStyle.fg.green}${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} found in "locations.json"${logStyle.reset}`);
-                    // console.log(locationsJson);
                     fetchLocationsXml();
                 } else {
                     console.error(`${logStyle.fg.red}No locations found in "locations.json"${logStyle.reset}`);
@@ -202,7 +201,6 @@ function fetchLocationsXml() {
                             });
 
                             console.log(`${logStyle.fg.green}${locationsXml.length} location${locationsXml.length === 1 ? "" : "s"} found in "locations.xml"${logStyle.reset}`);
-                            // console.log(locationsXml);
                             console.log("");
                             validateLocation();
                         } else {
@@ -266,30 +264,32 @@ function validateLocation(jsonIndex = 0) {
             }
         }
 
-        try {
-            const matchInXml = locationsXml.find(locXml => {
-                return locXml.id === loc.id && (locXml.name === loc.name || locXml.mapName === loc.name);
-            });
+        setTimeout(() => {
+            try {
+                const matchInXml = locationsXml.find(locXml => {
+                    return locXml.id === loc.id && (locXml.name === loc.name || locXml.mapName === loc.name);
+                });
 
-            logAndPush(`${loc["open"] && loc.schedules >= 1 ? (matchInXml ? logStyle.fg.green : logStyle.fg.red) : ""}"${loc.name}" is${matchInXml ? " " : " not "}found in "locations.xml"${logStyle.reset}`, loc["open"] && loc.schedules >= 1 ? (matchInXml ? "" : "e") : "w");
+                logAndPush(`${loc["open"] && loc.schedules >= 1 ? (matchInXml ? logStyle.fg.green : logStyle.fg.red) : ""}"${loc.name}" is${matchInXml ? " " : " not "}found in "locations.xml"${logStyle.reset}`, loc["open"] && loc.schedules >= 1 ? (matchInXml ? "" : "e") : "w");
 
-            if (matchInXml) {
-                const menuUrl = matchInXml.menuURL;
-                logAndPush(`${menuUrl ? logStyle.fg.green : logStyle.fg.red}Menu URL is${menuUrl ? " " : " not "}found for "${loc.name}" in "locations.xml"${logStyle.reset}`, menuUrl ? "" : "e");
-                if (menuUrl) {
-                    const isIdMatch = menuUrl.endsWith(`${matchInXml.id}.json`);
-                    logAndPush(`${isIdMatch ? logStyle.fg.green : logStyle.fg.red}Menu URL ${isIdMatch ? "matches" : `"${menuUrl}" does not match`} location id${isIdMatch ? " " : ` "${matchInXml.id}" `}for "${loc.name}"${logStyle.reset}`, isIdMatch ? "" : "w");
-                    fetchMenu(menuUrl, loc.name, validateNext);
+                if (matchInXml) {
+                    const menuUrl = matchInXml.menuURL;
+                    logAndPush(`${menuUrl ? logStyle.fg.green : logStyle.fg.red}Menu URL is${menuUrl ? " " : " not "}found for "${loc.name}" in "locations.xml"${logStyle.reset}`, menuUrl ? "" : "e");
+                    if (menuUrl) {
+                        const isIdMatch = menuUrl.endsWith(`${matchInXml.id}.json`);
+                        logAndPush(`${isIdMatch ? logStyle.fg.green : logStyle.fg.red}Menu URL ${isIdMatch ? "matches" : `"${menuUrl}" does not match`} location id${isIdMatch ? " " : ` "${matchInXml.id}" `}for "${loc.name}"${logStyle.reset}`, isIdMatch ? "" : "w");
+                        fetchMenu(menuUrl, loc.name, validateNext);
+                    }
+                } else {
+                    noXmlMatchLocations.push(loc.name);
+                    validateNext();
                 }
-            } else {
+            } catch (e) {
+                logAndPush(`${logStyle.fg.red}Something went wrong when trying to access "${loc.name}" in "locations.xml"${logStyle.reset}`, "e");
                 noXmlMatchLocations.push(loc.name);
                 validateNext();
             }
-        } catch (e) {
-            logAndPush(`${logStyle.fg.red}Something went wrong when trying to access "${loc.name}" in "locations.xml"${logStyle.reset}`, "e");
-            noXmlMatchLocations.push(loc.name);
-            validateNext();
-        }
+        }, 50);
     } catch (e) {
         logAndPush(`${logStyle.fg.red}Something went wrong with location ${jsonIndex} in "locations.json"${logStyle.reset}`, "e");
         validateNext();
@@ -378,10 +378,17 @@ function noMenuLocationsReport(showNextStep = false) {
     if (noMenuLocations.length > 0) {
         console.warn(`${logStyle.fg.red}The following ${noMenuLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noMenuLocations.length === 1 ? "has" : "have"} a match in "locations.xml" but had issue accessing menu${noMenuLocations.length === 1 ? "" : "s"}${logStyle.reset}`);
         console.log(noMenuLocations.join(showNextStep ? ", " : "\n"));
+
+        if (showNextStep) {
+            console.log("");
+        }
+    } else {
+        if (!showNextStep) {
+            console.log(`${logStyle.fg.green}No locations in "locations.json" failed the menu test${logStyle.reset}`);
+        }
     }
 
     if (showNextStep) {
-        console.log("");
         setTimeout(() => {
             noXmlMatchLocationsReport(showNextStep);
         }, 50);
@@ -400,10 +407,17 @@ function noXmlMatchLocationsReport(showNextStep = false) {
     if (noXmlMatchLocations.length > 0) {
         console.warn(`${logStyle.fg.red}The following ${noXmlMatchLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noXmlMatchLocations.length === 1 ? "does" : "do"} not have a match in "locations.xml"${logStyle.reset}`);
         console.log(noXmlMatchLocations.join(showNextStep ? ", " : "\n"));
+
+        if (showNextStep) {
+            console.log("");
+        }
+    } else {
+        if (!showNextStep) {
+            console.log(`${logStyle.fg.green}No locations in "locations.json" failed the XML test${logStyle.reset}`);
+        }
     }
 
     if (showNextStep) {
-        console.log("");
         setTimeout(() => {
             typeKeyPrompt();
         }, 50);
