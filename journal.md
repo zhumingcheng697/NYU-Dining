@@ -27,3 +27,15 @@
 - Added ability to log locations from the parsed JSON that passed all the tests, those that have a match in the parsed XML but failed to load menus, and those that do not have a match in the parsed XML
 
 - Added documentation to most functions and important variables
+
+## Week 3
+
+### Monday: September 14, 2020 (2 hours)
+
+- Added ability to use custom functions to console log messages and push it to an error messages array if needed
+
+- Added ability to show a table of location names and corresponding testing results
+
+- Added ability to listen to keyboard inputs and display information accordingly
+
+- Added ability to rerun all tests
