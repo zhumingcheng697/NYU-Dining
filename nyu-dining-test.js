@@ -67,6 +67,13 @@ let allErrorMsg = [];
 let allTestsCompleted = false;
 
 /**
+ * Whether the user has chosen to rerun the program
+ *
+ * @type {boolean}
+ */
+let rerunChosen = false;
+
+/**
  * Makes the console logs colorful.
  *
  * @link https://stackoverflow.com/a/40560590
@@ -386,7 +393,6 @@ function noMenuLocationsReport(showNextStep = false) {
  *
  * @param showNextStep {boolean} Whether to show the keyboard input prompt automatically, default to false
  * @see validateLocation
- * @see fetchMenu
  * @see locationsJson
  * @return {void}
  */
@@ -400,8 +406,6 @@ function noXmlMatchLocationsReport(showNextStep = false) {
         console.log("");
         setTimeout(() => {
             typeKeyPrompt();
-            // setTimeout(locationsResultReport, 50);
-            // console.log(allErrorMsg.join("\n"));
         }, 50);
     }
 }
@@ -427,22 +431,50 @@ function logAndPush(msg, logMethod = "log") {
     allErrorMsg.push(msg);
 }
 
+/**
+ * Logs the instruction for keyboard input
+ *
+ * @return {void}
+ */
 function typeKeyPrompt() {
     console.log(`${logStyle.fg.yellow}Type "E" to see all error messages thrown in the previous run${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "P" to see a list of the locations that passed ALL tests${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "M" to see a list of the locations that failed the menu test (had issue accessing menus)${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "X" to see a list of the locations that failed the XML test (does not have a match in XML)${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "T" to see a table of all locations with their names and test results${logStyle.reset}`);
-    // console.log(`${logStyle.fg.yellow}Type "R" to rerun the tests on all locations again${logStyle.reset}`);
+    console.log(`${logStyle.fg.yellow}Type "R" to rerun the tests on all locations again${logStyle.reset}`);
 }
 
+/**
+ * Shows a table of all locations in locationsJson with their names and test results
+ *
+ * @see locationsJson
+ * @return {void}
+ */
 function locationsResultReport() {
     console.table(locationsJson.map(loc => {
         return {
             location: loc.name,
-            result: (noXmlMatchLocations.includes(loc.name) ? "XML Error" : (noMenuLocations.includes(loc.name) ? "Menu Error" : (passedLocations.includes(loc.name) ? "PASSED" : "Other Error")))
+            result: (noXmlMatchLocations.includes(loc.name) ? "* XML Error *" : (noMenuLocations.includes(loc.name) ? "* Menu Error *" : (passedLocations.includes(loc.name) ? "PASSED" : "* Other Error *")))
         };
     }));
+}
+
+/**
+ * Reset the program and reruns all the tests
+ *
+ * @return {void}
+ */
+function rerunAllTests() {
+    locationsJson = null;
+    locationsXml = null;
+    passedLocations = [];
+    noMenuLocations = [];
+    noXmlMatchLocations = [];
+    allErrorMsg = [];
+    allTestsCompleted = false;
+    rerunChosen = false;
+    fetchLocationsJson();
 }
 
 fetchLocationsJson();
@@ -451,7 +483,11 @@ fetchLocationsJson();
  * Handles keyboard input in the console.
  */
 rl.on('line', (line) => {
-    if (allTestsCompleted) {
+    if (!allTestsCompleted) {
+        return;
+    }
+
+    if (!rerunChosen) {
         if (line.toUpperCase() === "E") {
             console.log(allErrorMsg.join("\n"));
         } else if (line.toUpperCase() === "P") {
@@ -462,14 +498,27 @@ rl.on('line', (line) => {
             noXmlMatchLocationsReport();
         } else if (line.toUpperCase() === "T") {
             locationsResultReport();
-        // } else if (line.toUpperCase() === "R") {
-        //     console.log("rerun");
+        } else if (line.toUpperCase() === "R") {
+            rerunChosen = true;
+            console.warn(`${logStyle.fg.red}Will rerun all tests. Continue? (y/n)${logStyle.reset}`)
+            return;
         } else {
-            console.error(`${logStyle.fg.red}Please type in a valid key. (E/P/M/X/T)${logStyle.reset}`)
+            console.error(`${logStyle.fg.red}Please type in a valid key. (E/P/M/X/T/R)${logStyle.reset}`);
             return;
         }
 
         console.log("");
         typeKeyPrompt();
+    } else {
+        if (line.toUpperCase() === "Y") {
+            console.log("");
+            rerunAllTests();
+        } else if (line.toUpperCase() === "N") {
+            rerunChosen = false;
+            console.log("");
+            typeKeyPrompt();
+        } else {
+            console.error(`${logStyle.fg.red}Please type in a valid key. (y/n)${logStyle.reset}`);
+        }
     }
 });
