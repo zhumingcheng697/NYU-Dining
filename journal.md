@@ -30,7 +30,7 @@
 
 ## Week 3
 
-### Monday: September 14, 2020 (2 hours)
+### Monday: September 14, 2020 (3 hours)
 
 - Added ability to use custom functions to console log messages and push it to an error messages array if needed
 
