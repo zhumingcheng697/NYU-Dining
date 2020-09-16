@@ -31,7 +31,7 @@ let runMode = "";
  * @see locationsJsonUrl
  * @type {Object[]}
  */
-let locationsJson;
+let locationsJson = [];
 
 /**
  * Object representation of locations parsed from locationsXmlUrl
@@ -39,10 +39,10 @@ let locationsJson;
  * @see locationsXml
  * @type {Object[]}
  */
-let locationsXml;
+let locationsXml = [];
 
 /**
- * An array of name of locations in locationsJson that passed ALL tests (validateLocation and fetchMenu)
+ * An array of name of locations in locationsJson that passed all tests (validateLocation and fetchMenu)
  *
  * @see validateLocation
  * @see fetchMenu
@@ -163,13 +163,16 @@ function fetchLocationsJson() {
                     console.log(`${logStyle.fg.green}${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} found in "locations.json"${logStyle.reset}`);
                     fetchLocationsXml();
                 } else {
-                    console.error(`${logStyle.fg.red}No locations found in "locations.json"${logStyle.reset}`);
+                    logAndPush(`${logStyle.fg.red}Fatal Error: No locations found in "locations.json"${logStyle.reset}`, "e");
+                    terminateTest();
                 }
             } catch (e) {
-                console.error(`${logStyle.fg.red}"locations.json" parse failed${logStyle.reset}`);
+                logAndPush(`${logStyle.fg.red}Fatal Error: "locations.json" parse failed${logStyle.reset}`, "e");
+                terminateTest();
             }
         }).catch(() => {
-            console.error(`${logStyle.fg.red}"locations.json" load failed${logStyle.reset}`);
+            logAndPush(`${logStyle.fg.red}Fatal Error: "locations.json" load failed${logStyle.reset}`, "e");
+            terminateTest();
         });
 }
 
@@ -217,17 +220,21 @@ function fetchLocationsXml() {
                             console.log("");
                             validateLocation();
                         } else {
-                            console.error(`${logStyle.fg.red}No locations found in "locations.xml"${logStyle.reset}`);
+                            logAndPush(`${logStyle.fg.red}Fatal Error: No locations found in "locations.xml"${logStyle.reset}`, "e");
+                            terminateTest();
                         }
                     } catch (e) {
-                        console.error(`${logStyle.fg.red}Field "locations" does not exist in "locations.xml"${logStyle.reset}`);
+                        logAndPush(`${logStyle.fg.red}Fatal Error: Field "locations" does not exist in "locations.xml"${logStyle.reset}`, "e");
+                        terminateTest();
                     }
                 } else {
-                    console.error(`${logStyle.fg.red}"locations.xml" parse failed${logStyle.reset}`);
+                    logAndPush(`${logStyle.fg.red}Fatal Error: "locations.xml" parse failed${logStyle.reset}`, "e");
+                    terminateTest();
                 }
             });
         }).catch(() => {
-            console.error(`${logStyle.fg.red}"locations.xml" load failed${logStyle.reset}`);
+            logAndPush(`${logStyle.fg.red}Fatal Error: "locations.xml" load failed${logStyle.reset}`, "e");
+            terminateTest();
         });
 }
 
@@ -352,7 +359,7 @@ function fetchMenu(url, location, completion = () => {}) {
 }
 
 /**
- * Logs names of locations in locationsJson that have passed ALL tests (validateLocation and fetchMenu)
+ * Logs names of locations in locationsJson that have passed all tests (validateLocation and fetchMenu)
  *
  * @param showNextStep {boolean} Whether to show noMenuLocationsReport automatically, default to false
  * @see noMenuLocationsReport
@@ -363,10 +370,10 @@ function fetchMenu(url, location, completion = () => {}) {
  */
 function passedLocationsReport(showNextStep = false) {
     if (passedLocations.length > 0) {
-        console.log(`${logStyle.fg.green}The following ${passedLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" passed ALL tests successfully${logStyle.reset}`);
+        console.log(`${logStyle.fg.green}The following ${passedLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" passed all tests successfully${logStyle.reset}`);
         console.log(passedLocations.join(showNextStep ? ", " : "\n"));
     } else {
-        console.error(`${logStyle.fg.red}All locations in "locations.json" failed some or all tests${logStyle.reset}`);
+        console.error(`${logStyle.fg.red}No locations in "locations.json" passed all tests${logStyle.reset}`);
     }
 
     if (showNextStep) {
@@ -465,7 +472,7 @@ function logAndPush(msg, logMethod = "log") {
  */
 function typeKeyPrompt() {
     console.log(`${logStyle.fg.yellow}Type "E" to see all error messages thrown in the previous run${logStyle.reset}`);
-    console.log(`${logStyle.fg.yellow}Type "P" to see a list of the locations that passed ALL tests${logStyle.reset}`);
+    console.log(`${logStyle.fg.yellow}Type "P" to see a list of the locations that passed all tests${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "M" to see a list of the locations that failed the menu test (had issue accessing menus)${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "X" to see a list of the locations that failed the XML test (does not have a match in XML)${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "T" to see a table of all locations with their names and test results${logStyle.reset}`);
@@ -479,6 +486,11 @@ function typeKeyPrompt() {
  * @return {void}
  */
 function locationsResultReport() {
+    if (locationsJson.length === 0) {
+        console.error(`${logStyle.fg.red}No locations found${logStyle.reset}`);
+        return;
+    }
+
     console.table(locationsJson.map(loc => {
         return {
             location: loc.name,
@@ -488,13 +500,26 @@ function locationsResultReport() {
 }
 
 /**
+ * Terminates the test if fatal error is found
+ *
+ * @return {void}
+ */
+function terminateTest() {
+    setTimeout(() => {
+        allTestsCompleted = true;
+        console.log(`${logStyle.fg.white}------Test terminated------${logStyle.reset}`);
+        typeKeyPrompt();
+    }, 50);
+}
+
+/**
  * Resets the program and reruns all the tests
  *
  * @return {void}
  */
 function rerunAllTests() {
-    locationsJson = null;
-    locationsXml = null;
+    locationsJson = [];
+    locationsXml = [];
     passedLocations = [];
     noMenuLocations = [];
     noXmlMatchLocations = [];
