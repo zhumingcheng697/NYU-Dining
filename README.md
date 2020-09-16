@@ -16,7 +16,7 @@
 
 - Print out a list of locations that have failed on both parts of the test
 
-- Print out a table for all locations with their names and if they have failed the test, and if so, on which part of the test they each have failed
+- Print out a table with names of all loaded locations and if they have failed the test, and if so, on which part of the test they each have failed
 
 - Rerun all the tests again if you would like to
 

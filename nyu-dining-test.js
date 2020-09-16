@@ -1,9 +1,29 @@
 const readline = require('readline');
 const fetchFile = require("node-fetch");
+const nodemailer = require("nodemailer");
 const parseXmlStr = require("xml2js").parseString;
 
 const locationsJsonUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.json";
 const locationsXmlUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.xml";
+
+const transport = nodemailer.createTransport({
+    host: "smtp.mailtrap.io",
+    port: 2525,
+    auth: {
+        user: "ae677f881a6c52",
+        pass: "80d9ee8bff404c"
+    }
+});
+
+/**
+ * Keeps track of the current state of the program.
+ *
+ * "": regular running mode;
+ * "R": ready to rerun;
+ *
+ * @type {string}
+ */
+let runMode = "";
 
 /**
  * Object representation of locations parsed from locationsJsonUrl
@@ -65,13 +85,6 @@ let allErrorMsg = [];
  * @type {boolean}
  */
 let allTestsCompleted = false;
-
-/**
- * Whether the user has chosen to rerun the program
- *
- * @type {boolean}
- */
-let rerunChosen = false;
 
 /**
  * Makes the console logs colorful.
@@ -475,7 +488,7 @@ function locationsResultReport() {
 }
 
 /**
- * Reset the program and reruns all the tests
+ * Resets the program and reruns all the tests
  *
  * @return {void}
  */
@@ -487,8 +500,37 @@ function rerunAllTests() {
     noXmlMatchLocations = [];
     allErrorMsg = [];
     allTestsCompleted = false;
-    rerunChosen = false;
+    runMode = "";
     fetchLocationsJson();
+}
+
+/**
+ * Composes new email message for nodemailer to send
+ *
+ * @param receiver {string} Email address to send the email to
+ * @see nodemailer
+ * @return {Object}
+ */
+function composeMessage(receiver) {
+    return {
+        to: receiver,
+        subject: `NYU Dining Testing Error Report (${(new Date()).toLocaleString(undefined, {
+            month: "short", day: "numeric", hour: "numeric", minute: "numeric", timeZoneName: "short"
+        })})`,
+        html: `<!DOCTYPE html><html lang="en"><body>${allErrorMsg.map(msg => {
+            let temp = msg.replace(logStyle.fg.red, "<p style='color: red; font-weight: bold'>").replace(logStyle.reset, "</p>");
+            
+            if (!temp.startsWith("<p")) {
+                temp = "<p>" + temp;
+            }
+            
+            if (!temp.endsWith("/p>")) {
+                temp = temp + "</p>";
+            }
+            
+            return temp;
+        }).join("")}</body></html>>`
+    };
 }
 
 fetchLocationsJson();
@@ -501,9 +543,21 @@ rl.on('line', (line) => {
         return;
     }
 
-    if (!rerunChosen) {
+    if (runMode === "") {
         if (line.toUpperCase() === "E") {
             console.log(allErrorMsg.join("\n"));
+            transport.sendMail(composeMessage("mccoy.zhu@nyu.edu"))
+                .then(() => {
+                    console.log("");
+                    console.log(`${logStyle.fg.green}Email send succeeded${logStyle.reset}`);
+                }).catch(() => {
+                    console.log("");
+                    console.log(`${logStyle.fg.red}Email send failed${logStyle.reset}`);
+                }).finally(() => {
+                    console.log("");
+                    typeKeyPrompt();
+                });
+            return;
         } else if (line.toUpperCase() === "P") {
             passedLocationsReport();
         } else if (line.toUpperCase() === "M") {
@@ -513,7 +567,7 @@ rl.on('line', (line) => {
         } else if (line.toUpperCase() === "T") {
             locationsResultReport();
         } else if (line.toUpperCase() === "R") {
-            rerunChosen = true;
+            runMode = "R";
             console.warn(`${logStyle.fg.red}Will rerun all tests. Continue? (y/n)${logStyle.reset}`)
             return;
         } else {
@@ -521,14 +575,16 @@ rl.on('line', (line) => {
             return;
         }
 
-        console.log("");
-        typeKeyPrompt();
-    } else {
+        setTimeout(() => {
+            console.log("");
+            typeKeyPrompt();
+        }, 50);
+    } else if (runMode === "R") {
         if (line.toUpperCase() === "Y") {
             console.log("");
             rerunAllTests();
         } else if (line.toUpperCase() === "N") {
-            rerunChosen = false;
+            runMode = "";
             console.log("");
             typeKeyPrompt();
         } else {
