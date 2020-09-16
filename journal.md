@@ -39,3 +39,11 @@
 - Added ability to listen to keyboard inputs and display information accordingly
 
 - Added ability to rerun all tests
+
+### Tuesday: September 15, 2020 (2 hours)
+
+- Partially fixed bugs where console logs show up out of order
+
+- Fixed bugs where no locations failed on either the XML test or menu test
+
+- Added `README.md`
