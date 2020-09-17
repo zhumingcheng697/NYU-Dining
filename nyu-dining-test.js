@@ -29,19 +29,33 @@ const transport = nodemailer.createTransport({
  *
  * "": regular running mode;
  * "R": ready to rerun;
- * "E0": ready to receive user input for email address;
- * "E1": ready to confirm user inputted email address;
+ * "E0": asking whether to never send emails again;
+ * "E1": ready to receive user input for email address;
+ * "E2": email address received and ready to confirm user inputted email address;
+ * "E3": email address confirmed and asking whether to remember it;
+ * "E4": asking whether to forget email address;
  *
  * @type {string}
  */
 let runMode = "";
 
 /**
+ * User’s remember-email configuration
+ *
+ * @type {{sendEmail: number, rememberEmail: number, rememberedEmail: string}}
+ */
+let userConfig = {
+    sendEmail: 0,
+    rememberEmail: 0,
+    rememberedEmail: ""
+};
+
+/**
  * The email address the user types in
  *
  * @type {string}
  */
-let typedInEmailAddress = "";
+let typedInEmail = "";
 
 /**
  * Object representation of locations parsed from locationsJsonUrl
@@ -492,36 +506,146 @@ function errorMsgReport() {
     if (allErrorMsg.length >= 1) {
         console.log(allErrorMsg.join("\n"));
         console.log("");
-        runMode = "E0";
-        console.log(`${logStyle.fg.yellow}If you would like to receive an email with a copy of these error messages, type in your email address. Otherwise, press enter.${logStyle.reset}`)
+
+        if (userConfig.sendEmail === 1 && userConfig.rememberEmail === 1 && userConfig.rememberedEmail) {
+            handleEmailAddressInput(userConfig.rememberedEmail);
+            return;
+        } else if (userConfig.sendEmail === 0) {
+            runMode = "E1";
+            console.log(`${logStyle.fg.yellow}If you would like to email yourself a copy of these error messages, type in your email address. Otherwise, press enter.${logStyle.reset}`);
+            return;
+        }
     } else {
         console.log(`${logStyle.fg.green}No error messages were thrown${logStyle.reset}`);
         console.log("");
-        typeKeyPrompt();
     }
+
+    typeKeyPrompt();
 }
 
 /**
- * Stores the email address the user types in in typedInEmailAddress, or returns back to normal mode
+ * Decides whether to store the user inputted email address in typedInEmail, or returns back to normal mode
  *
  * @param line {string} Keyboard input
- * @see typedInEmailAddress
+ * @see typedInEmail
  * @return {void}
  */
 function handleEmailAddressInput(line) {
     if (!line) {
-        runMode = "";
-        typeKeyPrompt();
+        runMode = "E0";
+        if (userConfig.rememberEmail === -1) {
+            runMode = "";
+            typeKeyPrompt();
+        } else {
+            console.log(`${logStyle.fg.yellow}Type in "R" to remember not to send emails, or press enter to ask whether to send email again the next time by default`);
+        }
     } else {
         let emailMatch = line.match(/[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@([A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?/g);
 
         if (emailMatch && emailMatch[0] === line) {
-            typedInEmailAddress = line;
-            runMode = "E1";
-            console.log(`${logStyle.fg.yellow}An email with a copy of the error messages will be sent to "${typedInEmailAddress}". Continue? (y/n)${logStyle.reset}`);
+            typedInEmail = line;
+            runMode = "E2";
+            console.log(`${logStyle.fg.yellow}An email with a copy of the error messages will be sent to "${typedInEmail}". Continue? (y/n)${logStyle.reset}`);
         } else {
             console.error(`${logStyle.fg.red}Please type in a valid email address, or press enter to go back${logStyle.reset}`);
         }
+    }
+}
+
+/**
+ * Confirms whether to send email
+ *
+ * @param line {string} Keyboard input
+ * @see sendEmail
+ * @return {void}
+ */
+function confirmSendEmail(line) {
+    if (line.toUpperCase() === "Y") {
+        if (userConfig.rememberEmail === 0) {
+            runMode = "E3";
+            console.log(`${logStyle.fg.yellow}Type in "R" to remember this email address, type in "N" to never remember any email addresses, or press enter to not remember this email address and ask for an email address again the next time by default${logStyle.reset}`);
+        } else {
+            sendEmail(userConfig.rememberedEmail || typedInEmail);
+        }
+    } else if (line.toUpperCase() === "N") {
+        if (userConfig.sendEmail === 1 && userConfig.rememberEmail === 1 && userConfig.rememberedEmail) {
+            runMode = "E4";
+            console.log(`${logStyle.fg.yellow}Do you want us to forget this email address? (y/n)${logStyle.reset}`);
+        } else {
+            runMode = "";
+            console.log("");
+            typeKeyPrompt();
+        }
+    } else {
+        console.error(`${logStyle.fg.red}Please type in a valid key. (y/n)${logStyle.reset}`);
+    }
+}
+
+/**
+ * Stores the user’s email-remember setting in userConfig
+ *
+ * @param line {string} Keyboard input
+ * @see userConfig
+ * @return {void}
+ */
+function handleEmailRemember(line) {
+    if (runMode === "E0") {
+        if (line.toUpperCase() === "R") {
+            userConfig.sendEmail = -1;
+            console.log(`${logStyle.fg.white}Thank you, we will remember not to send emails!${logStyle.reset}`);
+        }
+
+        if (line) {
+            console.log("");
+        }
+
+        runMode = "";
+        typeKeyPrompt();
+    } else if (runMode === "E3") {
+        if (line.toUpperCase() === "R") {
+            userConfig.sendEmail = 1;
+            userConfig.rememberEmail = 1;
+            userConfig.rememberedEmail = typedInEmail;
+            console.log(`${logStyle.fg.white}Thank you, we will remember to send email to "${userConfig.rememberedEmail}" the next time!${logStyle.reset}`);
+        } else if (line.toUpperCase() === "N") {
+            userConfig.rememberEmail = -1;
+            console.log(`${logStyle.fg.white}Thank you, we will not ask this again next time!${logStyle.reset}`);
+        }
+
+        sendEmail(typedInEmail);
+    } else if (runMode === "E4") {
+        if (line.toUpperCase() === "Y") {
+            console.log(`${logStyle.fg.white}Thank you, we have forgotten email "${userConfig.rememberedEmail}" now!${logStyle.reset}`);
+            userConfig.sendEmail = 0;
+            userConfig.rememberEmail = 0;
+            userConfig.rememberedEmail = "";
+            runMode = "E1";
+            console.log(`${logStyle.fg.yellow}If you would like to email yourself a copy of these error messages to another email address, type that in. Otherwise, press enter.${logStyle.reset}`);
+        } else if (line.toUpperCase() === "N") {
+            runMode = "";
+            console.log("");
+            typeKeyPrompt();
+        }
+    }
+}
+
+/**
+ * Confirms whether to rerun all tests
+ *
+ * @param line {string} Keyboard input
+ * @see rerunTest
+ * @return {void}
+ */
+function confirmRerun(line) {
+    if (line.toUpperCase() === "Y") {
+        console.log("");
+        rerunTest();
+    } else if (line.toUpperCase() === "N") {
+        runMode = "";
+        console.log("");
+        typeKeyPrompt();
+    } else {
+        console.error(`${logStyle.fg.red}Please type in a valid key. (y/n)${logStyle.reset}`);
     }
 }
 
@@ -552,7 +676,7 @@ function logAndPush(msg, logMethod = "log") {
  * @return {void}
  */
 function typeKeyPrompt() {
-    console.log(`${logStyle.fg.yellow}Type "E" to see all error messages thrown in the last run and optionally receive an email with a copy of it${logStyle.reset}`);
+    console.log(`${logStyle.fg.yellow}Type "E" to see all error messages thrown in the last run${userConfig.sendEmail === -1 ? "" : ` and${userConfig.sendEmail === 1 && userConfig.rememberEmail === 1 && userConfig.rememberedEmail ? " " : " optionally "}email yourself a copy of it`}${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "P" to see a list of the locations that passed all tests${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "M" to see a list of the locations that failed the menu test (had issue accessing menus)${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "X" to see a list of the locations that failed the XML test (does not have a match in XML)${logStyle.reset}`);
@@ -591,36 +715,6 @@ function rerunTest() {
 }
 
 /**
- * Composes new email message for sendEmail to send
- *
- * @param receiver {string} Email address to send the email to
- * @see sendEmail
- * @return {Object}
- */
-function composeMessage(receiver) {
-    return {
-        from: "nyu-dining-test@outlook.com",
-        to: receiver,
-        subject: `NYU Dining Testing Error Report (${(new Date()).toLocaleString(undefined, {
-            month: "short", day: "numeric", hour: "numeric", minute: "numeric", timeZoneName: "short"
-        })})`,
-        html: `<!DOCTYPE html><html lang="en"><body><header><h2>The following error${allErrorMsg.length === 1 ? " was" : "s were"} thrown during the last run of the test:</h2></header>${allErrorMsg.map(msg => {
-            let temp = msg.replace(logStyle.fg.red, "<p style='color: red; font-weight: bold'>").replace(logStyle.reset, "</p>");
-            
-            if (!temp.startsWith("<p")) {
-                temp = "<p>" + temp;
-            }
-            
-            if (!temp.endsWith("/p>")) {
-                temp = temp + "</p>";
-            }
-            
-            return temp;
-        }).join("")}</body></html>`
-    };
-}
-
-/**
  * Sends a new email composed by composeMessage
  *
  * @param receiver {string} Email address to send the email to
@@ -628,6 +722,38 @@ function composeMessage(receiver) {
  * @return {void}
  */
 function sendEmail(receiver) {
+    /**
+     * Composes new email message for sendEmail to send
+     *
+     * @param receiver {string} Email address to send the email to
+     * @see sendEmail
+     * @return {Object}
+     */
+    function composeMessage(receiver) {
+        return {
+            from: "nyu-dining-test@outlook.com",
+            to: receiver,
+            subject: `NYU Dining Testing Error Report (${(new Date()).toLocaleString(undefined, {
+                month: "short", day: "numeric", hour: "numeric", minute: "numeric", timeZoneName: "short"
+            })})`,
+            html: `<!DOCTYPE html><html lang="en"><body><header><h2>The following error${allErrorMsg.length === 1 ? " was" : "s were"} thrown during the last run of the test:</h2></header>${allErrorMsg.map(msg => {
+                let temp = msg.replace(logStyle.fg.red, "<p style='color: red; font-weight: bold'>").replace(logStyle.reset, "</p>");
+
+                if (!temp.startsWith("<p")) {
+                    temp = "<p>" + temp;
+                }
+
+                if (!temp.endsWith("/p>")) {
+                    temp = temp + "</p>";
+                }
+
+                return temp;
+            }).join("")}</body></html>`
+        };
+    }
+
+    console.log(`${logStyle.fg.white}------Emailing error messages to "${typedInEmail}"------${logStyle.reset}`);
+
     transport.sendMail(composeMessage(receiver))
         .then(() => {
             console.log(`${logStyle.fg.green}Email send succeeded${logStyle.reset}`);
@@ -676,27 +802,12 @@ rl.on('line', (line) => {
             typeKeyPrompt();
         }, 50);
     } else if (runMode === "R") {
-        if (line.toUpperCase() === "Y") {
-            console.log("");
-            rerunTest();
-        } else if (line.toUpperCase() === "N") {
-            runMode = "";
-            console.log("");
-            typeKeyPrompt();
-        } else {
-            console.error(`${logStyle.fg.red}Please type in a valid key. (y/n)${logStyle.reset}`);
-        }
-    } else if (runMode === "E0") {
-        handleEmailAddressInput(line);
+        confirmRerun(line);
     } else if (runMode === "E1") {
-        if (line.toUpperCase() === "Y") {
-            sendEmail(typedInEmailAddress);
-        } else if (line.toUpperCase() === "N") {
-            runMode = "";
-            console.log("");
-            typeKeyPrompt();
-        } else {
-            console.error(`${logStyle.fg.red}Please type in a valid key. (y/n)${logStyle.reset}`);
-        }
+        handleEmailAddressInput(line);
+    } else if (runMode === "E2") {
+        confirmSendEmail(line);
+    } else if (["E0", "E3", "E4"].includes(runMode)) {
+        handleEmailRemember(line);
     }
 });
