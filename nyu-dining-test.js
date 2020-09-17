@@ -1,3 +1,4 @@
+const fs = require('fs');
 const readline = require('readline');
 const fetchFile = require("node-fetch");
 const nodemailer = require("nodemailer");
@@ -49,13 +50,13 @@ let runMode = "";
 /**
  * User’s remember-email configuration
  *
- * @type {{sendEmail: number, rememberEmail: number, rememberedEmail: string, autoSend: number}}
+ * @type {{autoSendEmailAfterRun: number, sendEmailAfterShowingErrors: number, rememberEmail: number, rememberedEmail: string}}
  */
 let userConfig = {
-    sendEmail: 0,
+    autoSendEmailAfterRun: 0,
+    sendEmailAfterShowingErrors: 0,
     rememberEmail: 0,
-    rememberedEmail: "",
-    autoSend: 0
+    rememberedEmail: ""
 };
 
 /**
@@ -509,10 +510,10 @@ function errorMsgReport() {
         console.log(allErrorMsg.join("\n"));
         console.log("");
 
-        if (userConfig.sendEmail === 1 && userConfig.rememberEmail === 1 && userConfig.rememberedEmail) {
+        if (userConfig.sendEmailAfterShowingErrors === 1 && userConfig.rememberEmail === 1 && userConfig.rememberedEmail) {
             handleEmailAddressInput(userConfig.rememberedEmail);
             return;
-        } else if (userConfig.sendEmail === 0) {
+        } else if (userConfig.sendEmailAfterShowingErrors !== -1) {
             runMode = "E1";
             console.log(`${logStyle.fg.yellow}If you would like to email yourself a copy of these error messages, type in your email address. Otherwise, press enter.${logStyle.reset}`);
             return;
@@ -534,12 +535,12 @@ function errorMsgReport() {
  */
 function handleEmailAddressInput(line) {
     if (!line) {
-        runMode = "E0";
-        if (userConfig.rememberEmail === -1) {
+        if (userConfig.rememberEmail === -1 || userConfig.sendEmailAfterShowingErrors === 1) {
             runMode = "";
             typeKeyPrompt();
         } else {
-            console.log(`${logStyle.fg.yellow}Type in "R" to remember not to send emails, or press enter to ask whether to send email again the next time by default`);
+            runMode = "E0";
+            console.log(`${logStyle.fg.yellow}Type in "N" to never ask to send emails again, or press enter to always ask whether to send an email by default`);
         }
     } else {
         let emailMatch = line.match(/[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@([A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?/g);
@@ -570,7 +571,7 @@ function confirmSendEmail(line) {
             sendEmail(userConfig.rememberedEmail || typedInEmail);
         }
     } else if (line.toUpperCase() === "N") {
-        if (userConfig.sendEmail === 1 && userConfig.rememberEmail === 1 && userConfig.rememberedEmail) {
+        if (userConfig.sendEmailAfterShowingErrors === 1 && userConfig.rememberEmail === 1 && userConfig.rememberedEmail) {
             runMode = "E4";
             console.log(`${logStyle.fg.yellow}Do you want us to forget this email address? (y/n)${logStyle.reset}`);
         } else {
@@ -592,35 +593,36 @@ function confirmSendEmail(line) {
  */
 function handleEmailRemember(line) {
     if (runMode === "E0") {
-        if (line.toUpperCase() === "R") {
-            userConfig.sendEmail = -1;
-            userConfig.autoSend = -1;
+        if (line.toUpperCase() === "N") {
+            userConfig.autoSendEmailAfterRun = -1;
+            userConfig.sendEmailAfterShowingErrors = -1;
             console.log(`${logStyle.fg.white}Thank you, we will remember not to send emails!${logStyle.reset}`);
+        } else {
+            userConfig.autoSendEmailAfterRun = 0;
+            userConfig.sendEmailAfterShowingErrors = 1;
+            console.log(`${logStyle.fg.white}Thank you, we will not ask this again next time!${logStyle.reset}`);
         }
 
-        if (line) {
-            console.log("");
-        }
-
+        console.log("");
         runMode = "";
         typeKeyPrompt();
     } else if (runMode === "E3") {
         if (line.toUpperCase() === "R") {
-            userConfig.sendEmail = 1;
+            userConfig.sendEmailAfterShowingErrors = 1;
             userConfig.rememberEmail = 1;
             userConfig.rememberedEmail = typedInEmail;
             console.log(`${logStyle.fg.white}Thank you, we will remember to email "${userConfig.rememberedEmail}" the next time!${logStyle.reset}`);
 
-            if (userConfig.autoSend === 0) {
+            if (userConfig.autoSendEmailAfterRun === 0) {
                 runMode = "E5";
                 console.log(`${logStyle.fg.yellow}Would you like to automatically receive an email after each run of the test? (y/n)${logStyle.reset}`);
                 return;
             }
         } else if (line.toUpperCase() === "N") {
-            userConfig.sendEmail = 0;
+            userConfig.autoSendEmailAfterRun = -1;
+            userConfig.sendEmailAfterShowingErrors = 0;
             userConfig.rememberEmail = -1;
             userConfig.rememberedEmail = "";
-            userConfig.autoSend = -1;
             console.log(`${logStyle.fg.white}Thank you, we will not ask this again next time!${logStyle.reset}`);
         }
 
@@ -631,10 +633,10 @@ function handleEmailRemember(line) {
     } else if (runMode === "E4") {
         if (line.toUpperCase() === "Y") {
             console.log(`${logStyle.fg.white}Thank you, we have forgotten email "${userConfig.rememberedEmail}" now!${logStyle.reset}`);
-            userConfig.sendEmail = 0;
+            userConfig.autoSendEmailAfterRun = 0;
+            userConfig.sendEmailAfterShowingErrors = 0;
             userConfig.rememberEmail = 0;
             userConfig.rememberedEmail = "";
-            userConfig.autoSend = 0;
             runMode = "E1";
             console.log(`${logStyle.fg.yellow}If you would like to email yourself a copy of these error messages to another email address, type that in. Otherwise, press enter.${logStyle.reset}`);
         } else if (line.toUpperCase() === "N") {
@@ -647,10 +649,10 @@ function handleEmailRemember(line) {
     } else if (runMode === "E5") {
         if (line.toUpperCase() === "Y") {
             console.log(`${logStyle.fg.white}Thank you, we will remember to automatically email "${userConfig.rememberedEmail}" after each run of the test!${logStyle.reset}`);
-            userConfig.autoSend = 1;
+            userConfig.autoSendEmailAfterRun = 1;
         } else if (line.toUpperCase() === "N") {
             console.log(`${logStyle.fg.white}Thank you, we will not ask this again next time!${logStyle.reset}`);
-            userConfig.autoSend = -1;
+            userConfig.autoSendEmailAfterRun = -1;
         } else {
             console.error(`${logStyle.fg.red}Please type in a valid key. (y/n)${logStyle.reset}`);
             return;
@@ -708,7 +710,7 @@ function logAndPush(msg, logMethod = "log") {
  * @return {void}
  */
 function typeKeyPrompt() {
-    console.log(`${logStyle.fg.yellow}Type "E" to see all error messages thrown in the last run${userConfig.sendEmail === -1 ? "" : ` and${userConfig.sendEmail === 1 && userConfig.rememberEmail === 1 && userConfig.rememberedEmail ? " " : " optionally "}email yourself a copy of it`}${logStyle.reset}`);
+    console.log(`${logStyle.fg.yellow}Type "E" to see all error messages thrown in the last run${userConfig.sendEmailAfterShowingErrors === -1 ? "" : ` and${userConfig.sendEmailAfterShowingErrors === 1 && userConfig.rememberEmail === 1 && userConfig.rememberedEmail ? " " : " optionally "}email yourself a copy of it`}${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "P" to see a list of the locations that passed all tests${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "M" to see a list of the locations that failed the menu test (had issue accessing menus)${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "X" to see a list of the locations that failed the XML test (does not have a match in XML)${logStyle.reset}`);
@@ -826,7 +828,7 @@ function autoSendEmailOrShowPrompt(logBlankLine) {
         }, 50);
     }
 
-    if (userConfig.autoSend === 1 && userConfig.sendEmail === 1 && userConfig.rememberEmail === 1 && userConfig.rememberedEmail && allErrorMsg.length > 0) {
+    if (userConfig.autoSendEmailAfterRun === 1 && userConfig.sendEmailAfterShowingErrors === 1 && userConfig.rememberEmail === 1 && userConfig.rememberedEmail && allErrorMsg.length > 0) {
         sendEmail(userConfig.rememberedEmail, () => {
             allTestsCompleted = true;
         });
@@ -834,6 +836,16 @@ function autoSendEmailOrShowPrompt(logBlankLine) {
         showPromptWithTimeout();
     }
 }
+
+// fs.writeFile("test.json", JSON.stringify(userConfig, null, 2), err => {
+//     if (err) {
+//         console.log(err);
+//     } else {
+//         let file = fs.readFileSync("test.json", "utf-8");
+//         console.log(file);
+//         console.log(JSON.parse(file));
+//     }
+// })
 
 fetchLocationsJson();
 
