@@ -10,6 +10,10 @@
 
 - Print out all error messages previously thrown after all tests have been completed
 
+- Email the users a copy of all the previously thrown error messages to the email address the users input
+
+- Remember and forget whether the users prefer to email themselves error messages and which email address they prefer
+
 - Print out a list of locations that have passed all tests
 
 - Print out a list of locations that have passed one part of the tests but failed on the other part

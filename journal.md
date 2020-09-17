@@ -47,3 +47,17 @@
 - Fixed bugs where no locations failed on either the XML test or menu test
 
 - Added `README.md`
+
+### Wednesday: September 16, 2020 (5 hours)
+
+- Added ability to terminate the test after fatal errors
+
+- Set up an outlook [email account](mailto:nyu-dining-test@outlook.com)
+
+- Added ability to send dummy and real emails using [nodemailer](https://www.npmjs.com/package/nodemailer) module
+
+- Added ability to validate user inputted email address
+
+- Added ability to map terminal color codes into styled `HTML` code to send in emails
+
+- Added ability to remember (during the session) and forget whether the users prefer to email themselves error messages and which email address they prefer
