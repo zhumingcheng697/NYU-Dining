@@ -6,12 +6,21 @@ const parseXmlStr = require("xml2js").parseString;
 const locationsJsonUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.json";
 const locationsXmlUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.xml";
 
+/**
+ * Configures nodemailer to be able to send emails
+ *
+ * @link https://ourcodeworld.com/articles/read/264/how-to-send-an-email-gmail-outlook-and-zoho-using-nodemailer-in-node-js
+ */
 const transport = nodemailer.createTransport({
-    host: "smtp.mailtrap.io",
-    port: 2525,
+    host: "smtp-mail.outlook.com", // hostname
+    secureConnection: false,
+    port: 587,
+    tls: {
+        ciphers:'SSLv3'
+    },
     auth: {
-        user: "ae677f881a6c52",
-        pass: "80d9ee8bff404c"
+        user: "nyu-dining-test@outlook.com",
+        pass: "Dining*2020"
     }
 });
 
@@ -20,10 +29,19 @@ const transport = nodemailer.createTransport({
  *
  * "": regular running mode;
  * "R": ready to rerun;
+ * "E0": ready to receive user input for email address;
+ * "E1": ready to confirm user inputted email address;
  *
  * @type {string}
  */
 let runMode = "";
+
+/**
+ * The email address the user types in
+ *
+ * @type {string}
+ */
+let typedInEmailAddress = "";
 
 /**
  * Object representation of locations parsed from locationsJsonUrl
@@ -445,6 +463,69 @@ function noXmlMatchLocationsReport(showNextStep = false) {
 }
 
 /**
+ * Shows a table of all locations in locationsJson with their names and test results
+ *
+ * @see locationsJson
+ * @return {void}
+ */
+function locationsResultReport() {
+    if (locationsJson.length === 0) {
+        console.error(`${logStyle.fg.red}No locations loaded from "locations.json"${logStyle.reset}`);
+        return;
+    }
+
+    console.table(locationsJson.map(loc => {
+        return {
+            location: loc.name,
+            result: (noXmlMatchLocations.includes(loc.name) ? "* XML Error *" : (noMenuLocations.includes(loc.name) ? "* Menu Error *" : (passedLocations.includes(loc.name) ? "PASSED" : "* Other Error *")))
+        };
+    }));
+}
+
+/**
+ * Shows all previously thrown error messages
+ *
+ * @see locationsJson
+ * @return {void}
+ */
+function errorMsgReport() {
+    if (allErrorMsg.length >= 1) {
+        console.log(allErrorMsg.join("\n"));
+        console.log("");
+        runMode = "E0";
+        console.log(`${logStyle.fg.yellow}If you would like to receive an email with a copy of these error messages, type in your email address. Otherwise, press enter.${logStyle.reset}`)
+    } else {
+        console.log(`${logStyle.fg.green}No error messages were thrown${logStyle.reset}`);
+        console.log("");
+        typeKeyPrompt();
+    }
+}
+
+/**
+ * Stores the email address the user types in in typedInEmailAddress, or returns back to normal mode
+ *
+ * @param line {string} Keyboard input
+ * @see typedInEmailAddress
+ * @return {void}
+ */
+function handleEmailAddressInput(line) {
+    if (!line) {
+        runMode = "";
+        typeKeyPrompt();
+    } else {
+        let emailMatch = line.match(/[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@([A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?/g);
+
+        if (emailMatch && emailMatch[0] === line) {
+            typedInEmailAddress = line;
+            runMode = "E1";
+            console.log(`${logStyle.fg.yellow}An email with a copy of the error messages will be sent to "${typedInEmailAddress}". Continue? (y/n)${logStyle.reset}`);
+        } else {
+            console.error(`${logStyle.fg.red}Please type in a valid email address, or press enter to go back${logStyle.reset}`);
+        }
+    }
+}
+
+/**
  * Logs message in console and pushes it to allErrorMsg, if necessary
  *
  * @param msg {string} Message to log
@@ -471,32 +552,12 @@ function logAndPush(msg, logMethod = "log") {
  * @return {void}
  */
 function typeKeyPrompt() {
-    console.log(`${logStyle.fg.yellow}Type "E" to see all error messages thrown in the previous run${logStyle.reset}`);
+    console.log(`${logStyle.fg.yellow}Type "E" to see all error messages thrown in the last run and optionally receive an email with a copy of it${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "P" to see a list of the locations that passed all tests${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "M" to see a list of the locations that failed the menu test (had issue accessing menus)${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "X" to see a list of the locations that failed the XML test (does not have a match in XML)${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "T" to see a table of all locations with their names and test results${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "R" to rerun the tests on all locations again${logStyle.reset}`);
-}
-
-/**
- * Shows a table of all locations in locationsJson with their names and test results
- *
- * @see locationsJson
- * @return {void}
- */
-function locationsResultReport() {
-    if (locationsJson.length === 0) {
-        console.error(`${logStyle.fg.red}No locations found${logStyle.reset}`);
-        return;
-    }
-
-    console.table(locationsJson.map(loc => {
-        return {
-            location: loc.name,
-            result: (noXmlMatchLocations.includes(loc.name) ? "* XML Error *" : (noMenuLocations.includes(loc.name) ? "* Menu Error *" : (passedLocations.includes(loc.name) ? "PASSED" : "* Other Error *")))
-        };
-    }));
 }
 
 /**
@@ -517,7 +578,7 @@ function terminateTest() {
  *
  * @return {void}
  */
-function rerunAllTests() {
+function rerunTest() {
     locationsJson = [];
     locationsXml = [];
     passedLocations = [];
@@ -530,19 +591,20 @@ function rerunAllTests() {
 }
 
 /**
- * Composes new email message for nodemailer to send
+ * Composes new email message for sendEmail to send
  *
  * @param receiver {string} Email address to send the email to
- * @see nodemailer
+ * @see sendEmail
  * @return {Object}
  */
 function composeMessage(receiver) {
     return {
+        from: "nyu-dining-test@outlook.com",
         to: receiver,
         subject: `NYU Dining Testing Error Report (${(new Date()).toLocaleString(undefined, {
             month: "short", day: "numeric", hour: "numeric", minute: "numeric", timeZoneName: "short"
         })})`,
-        html: `<!DOCTYPE html><html lang="en"><body>${allErrorMsg.map(msg => {
+        html: `<!DOCTYPE html><html lang="en"><body><header><h2>The following error${allErrorMsg.length === 1 ? " was" : "s were"} thrown during the last run of the test:</h2></header>${allErrorMsg.map(msg => {
             let temp = msg.replace(logStyle.fg.red, "<p style='color: red; font-weight: bold'>").replace(logStyle.reset, "</p>");
             
             if (!temp.startsWith("<p")) {
@@ -554,8 +616,28 @@ function composeMessage(receiver) {
             }
             
             return temp;
-        }).join("")}</body></html>>`
+        }).join("")}</body></html>`
     };
+}
+
+/**
+ * Sends a new email composed by composeMessage
+ *
+ * @param receiver {string} Email address to send the email to
+ * @see composeMessage
+ * @return {void}
+ */
+function sendEmail(receiver) {
+    transport.sendMail(composeMessage(receiver))
+        .then(() => {
+            console.log(`${logStyle.fg.green}Email send succeeded${logStyle.reset}`);
+        }).catch((e) => {
+            console.log(`${logStyle.fg.red}Email send failed: ${e}${logStyle.reset}`);
+        }).finally(() => {
+            console.log("");
+            typeKeyPrompt();
+            runMode = "";
+        });
 }
 
 fetchLocationsJson();
@@ -570,18 +652,7 @@ rl.on('line', (line) => {
 
     if (runMode === "") {
         if (line.toUpperCase() === "E") {
-            console.log(allErrorMsg.join("\n"));
-            transport.sendMail(composeMessage("mccoy.zhu@nyu.edu"))
-                .then(() => {
-                    console.log("");
-                    console.log(`${logStyle.fg.green}Email send succeeded${logStyle.reset}`);
-                }).catch(() => {
-                    console.log("");
-                    console.log(`${logStyle.fg.red}Email send failed${logStyle.reset}`);
-                }).finally(() => {
-                    console.log("");
-                    typeKeyPrompt();
-                });
+            errorMsgReport();
             return;
         } else if (line.toUpperCase() === "P") {
             passedLocationsReport();
@@ -607,7 +678,19 @@ rl.on('line', (line) => {
     } else if (runMode === "R") {
         if (line.toUpperCase() === "Y") {
             console.log("");
-            rerunAllTests();
+            rerunTest();
+        } else if (line.toUpperCase() === "N") {
+            runMode = "";
+            console.log("");
+            typeKeyPrompt();
+        } else {
+            console.error(`${logStyle.fg.red}Please type in a valid key. (y/n)${logStyle.reset}`);
+        }
+    } else if (runMode === "E0") {
+        handleEmailAddressInput(line);
+    } else if (runMode === "E1") {
+        if (line.toUpperCase() === "Y") {
+            sendEmail(typedInEmailAddress);
         } else if (line.toUpperCase() === "N") {
             runMode = "";
             console.log("");
