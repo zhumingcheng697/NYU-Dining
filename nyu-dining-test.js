@@ -12,16 +12,22 @@ const locationsXmlUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/location
  * @link https://ourcodeworld.com/articles/read/264/how-to-send-an-email-gmail-outlook-and-zoho-using-nodemailer-in-node-js
  */
 const transport = nodemailer.createTransport({
-    host: "smtp-mail.outlook.com", // hostname
-    secureConnection: false,
-    port: 587,
-    tls: {
-        ciphers:'SSLv3'
-    },
+    host: "smtp.mailtrap.io",
+    port: 2525,
     auth: {
-        user: "nyu-dining-test@outlook.com",
-        pass: "Dining*2020"
+        user: "ae677f881a6c52",
+        pass: "80d9ee8bff404c"
     }
+    // host: "smtp-mail.outlook.com",
+    // secureConnection: false,
+    // port: 587,
+    // tls: {
+    //     ciphers:'SSLv3'
+    // },
+    // auth: {
+    //     user: "nyu-dining-test@outlook.com",
+    //     pass: "Dining*2020"
+    // }
 });
 
 /**
@@ -34,6 +40,7 @@ const transport = nodemailer.createTransport({
  * "E2": email address received and ready to confirm user inputted email address;
  * "E3": email address confirmed and asking whether to remember it;
  * "E4": asking whether to forget email address;
+ * "E5": asking whether to auto send emails after each run;
  *
  * @type {string}
  */
@@ -42,12 +49,13 @@ let runMode = "";
 /**
  * User’s remember-email configuration
  *
- * @type {{sendEmail: number, rememberEmail: number, rememberedEmail: string}}
+ * @type {{sendEmail: number, rememberEmail: number, rememberedEmail: string, autoSend: number}}
  */
 let userConfig = {
     sendEmail: 0,
     rememberEmail: 0,
-    rememberedEmail: ""
+    rememberedEmail: "",
+    autoSend: 0
 };
 
 /**
@@ -293,7 +301,7 @@ function validateLocation(jsonIndex = 0) {
                 validateLocation(jsonIndex + 1);
             }, 50);
         } else {
-            allTestsCompleted = true;
+            // allTestsCompleted = true;
             console.log("");
             console.log(`${logStyle.fg.white}------All tests completed------${logStyle.reset}`);
             passedLocationsReport(true);
@@ -459,10 +467,6 @@ function noXmlMatchLocationsReport(showNextStep = false) {
     if (noXmlMatchLocations.length > 0) {
         console.warn(`${logStyle.fg.red}The following ${noXmlMatchLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noXmlMatchLocations.length === 1 ? "does" : "do"} not have a match in "locations.xml"${logStyle.reset}`);
         console.log(noXmlMatchLocations.join(showNextStep ? ", " : "\n"));
-
-        if (showNextStep) {
-            console.log("");
-        }
     } else {
         if (!showNextStep) {
             console.log(`${logStyle.fg.green}No locations in "locations.json" failed the XML test${logStyle.reset}`);
@@ -470,9 +474,7 @@ function noXmlMatchLocationsReport(showNextStep = false) {
     }
 
     if (showNextStep) {
-        setTimeout(() => {
-            typeKeyPrompt();
-        }, 50);
+        autoSendEmailOrShowPrompt(noXmlMatchLocations.length > 0);
     }
 }
 
@@ -516,7 +518,7 @@ function errorMsgReport() {
             return;
         }
     } else {
-        console.log(`${logStyle.fg.green}No error messages were thrown${logStyle.reset}`);
+        console.log(`${logStyle.fg.green}No error messages were thrown in the last run${logStyle.reset}`);
         console.log("");
     }
 
@@ -592,6 +594,7 @@ function handleEmailRemember(line) {
     if (runMode === "E0") {
         if (line.toUpperCase() === "R") {
             userConfig.sendEmail = -1;
+            userConfig.autoSend = -1;
             console.log(`${logStyle.fg.white}Thank you, we will remember not to send emails!${logStyle.reset}`);
         }
 
@@ -606,12 +609,24 @@ function handleEmailRemember(line) {
             userConfig.sendEmail = 1;
             userConfig.rememberEmail = 1;
             userConfig.rememberedEmail = typedInEmail;
-            console.log(`${logStyle.fg.white}Thank you, we will remember to send email to "${userConfig.rememberedEmail}" the next time!${logStyle.reset}`);
+            console.log(`${logStyle.fg.white}Thank you, we will remember to email "${userConfig.rememberedEmail}" the next time!${logStyle.reset}`);
+
+            if (userConfig.autoSend === 0) {
+                runMode = "E5";
+                console.log(`${logStyle.fg.yellow}Would you like to automatically receive an email after each run of the test? (y/n)${logStyle.reset}`);
+                return;
+            }
         } else if (line.toUpperCase() === "N") {
+            userConfig.sendEmail = 0;
             userConfig.rememberEmail = -1;
+            userConfig.rememberedEmail = "";
+            userConfig.autoSend = -1;
             console.log(`${logStyle.fg.white}Thank you, we will not ask this again next time!${logStyle.reset}`);
         }
 
+        if (line) {
+            console.log("");
+        }
         sendEmail(typedInEmail);
     } else if (runMode === "E4") {
         if (line.toUpperCase() === "Y") {
@@ -619,13 +634,30 @@ function handleEmailRemember(line) {
             userConfig.sendEmail = 0;
             userConfig.rememberEmail = 0;
             userConfig.rememberedEmail = "";
+            userConfig.autoSend = 0;
             runMode = "E1";
             console.log(`${logStyle.fg.yellow}If you would like to email yourself a copy of these error messages to another email address, type that in. Otherwise, press enter.${logStyle.reset}`);
         } else if (line.toUpperCase() === "N") {
             runMode = "";
             console.log("");
             typeKeyPrompt();
+        } else {
+            console.error(`${logStyle.fg.red}Please type in a valid key. (y/n)${logStyle.reset}`);
         }
+    } else if (runMode === "E5") {
+        if (line.toUpperCase() === "Y") {
+            console.log(`${logStyle.fg.white}Thank you, we will remember to automatically email "${userConfig.rememberedEmail}" after each run of the test!${logStyle.reset}`);
+            userConfig.autoSend = 1;
+        } else if (line.toUpperCase() === "N") {
+            console.log(`${logStyle.fg.white}Thank you, we will not ask this again next time!${logStyle.reset}`);
+            userConfig.autoSend = -1;
+        } else {
+            console.error(`${logStyle.fg.red}Please type in a valid key. (y/n)${logStyle.reset}`);
+            return;
+        }
+
+        console.log("");
+        sendEmail(userConfig.rememberedEmail);
     }
 }
 
@@ -691,9 +723,9 @@ function typeKeyPrompt() {
  */
 function terminateTest() {
     setTimeout(() => {
-        allTestsCompleted = true;
+        // allTestsCompleted = true;
         console.log(`${logStyle.fg.white}------Test terminated------${logStyle.reset}`);
-        typeKeyPrompt();
+        autoSendEmailOrShowPrompt(false);
     }, 50);
 }
 
@@ -718,10 +750,11 @@ function rerunTest() {
  * Sends a new email composed by composeMessage
  *
  * @param receiver {string} Email address to send the email to
+ * @param finalHandler {function} Handler after sending the email
  * @see composeMessage
  * @return {void}
  */
-function sendEmail(receiver) {
+function sendEmail(receiver, finalHandler = () => {}) {
     /**
      * Composes new email message for sendEmail to send
      *
@@ -761,9 +794,45 @@ function sendEmail(receiver) {
             console.log(`${logStyle.fg.red}Email send failed: ${e}${logStyle.reset}`);
         }).finally(() => {
             console.log("");
+            finalHandler();
             typeKeyPrompt();
             runMode = "";
         });
+}
+
+/**
+ * Decides whether to automatically send an email or show typeKeyPrompt
+ *
+ * @param logBlankLine {boolean} Whether to log a blank line before showing typeKeyPrompt
+ * @see typeKeyPrompt
+ * @return {void}
+ */
+function autoSendEmailOrShowPrompt(logBlankLine) {
+    /**
+     * Show typeKeyPrompt with a timeout with or without a blank line
+     *
+     * @see typeKeyPrompt
+     * @return {void}
+     */
+    function showPromptWithTimeout() {
+        if (logBlankLine) {
+            console.log("");
+        }
+
+        allTestsCompleted = true;
+
+        setTimeout(() => {
+            typeKeyPrompt();
+        }, 50);
+    }
+
+    if (userConfig.autoSend === 1 && userConfig.sendEmail === 1 && userConfig.rememberEmail === 1 && userConfig.rememberedEmail && allErrorMsg.length > 0) {
+        sendEmail(userConfig.rememberedEmail, () => {
+            allTestsCompleted = true;
+        });
+    } else {
+        showPromptWithTimeout();
+    }
 }
 
 fetchLocationsJson();
@@ -807,7 +876,7 @@ rl.on('line', (line) => {
         handleEmailAddressInput(line);
     } else if (runMode === "E2") {
         confirmSendEmail(line);
-    } else if (["E0", "E3", "E4"].includes(runMode)) {
+    } else if (["E0", "E3", "E4", "E5"].includes(runMode)) {
         handleEmailRemember(line);
     }
 });
