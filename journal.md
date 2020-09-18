@@ -61,3 +61,15 @@
 - Added ability to map terminal color codes into styled `HTML` code to send in emails
 
 - Added ability to remember (during the session) and forget whether the users prefer to email themselves error messages and which email address they prefer
+
+### Thursday: September 17, 2020 (5 hours)
+
+- Added ability to email error messages automatically after the test finishes
+
+- Added ability to save user’s email configuration preferences to a JSON file and read from it
+
+- Added `devMode` for maximum automation and minimal user input and interaction
+
+- Added ability to automatically rerun the test after a set interval when running under `devMode`
+
+- Updated README.md

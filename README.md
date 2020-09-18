@@ -1,28 +1,16 @@
 # NYU-Dining-Test
 
-**A Script that Fetches NYU Dining Location and Menu Data from the S3 Bucket and Parses and Validates that Data.**
+**A Script that Fetches NYU Dining Location and Menu Data, Parses and Validates it, and Automatically Emails the Users Should Errors Occur.**
 
 ## Features
 
 - Check the availability and validity of the location and menu data from the S3 bucket on which the dining portion of NYU Mobile relies
 
-- Print out the result for each and every test for each and every loaded location when the tests are running
+- Email the users a copy of all the previously thrown error messages
 
-- Print out all error messages previously thrown after all tests have been completed
-
-- Email the users a copy of all the previously thrown error messages to the email address the users input
-
-- Remember and forget whether the users prefer to email themselves error messages and which email address they prefer
-
-- Print out a list of locations that have passed all tests
-
-- Print out a list of locations that have passed one part of the tests but failed on the other part
-
-- Print out a list of locations that have failed on both parts of the test
+- Automatically rerun all the tests after a set interval or manually rerun all the tests with keyboard commands
 
 - Print out a table with names of all loaded locations and if they have failed the test, and if so, on which part of the test they each have failed
-
-- Rerun all the tests again if you would like to
 
 ## How to Set Up
 
@@ -36,12 +24,14 @@
     $ npm install
     ```
    
-3. Run the script `nyu-dining-test.js`.
+3. Configure the preferences in `config.json`.
+
+4. Run the script `nyu-dining-test.js`.
     ```
     $ node nyu-dining-test.js
     ```
    
-4. Follow the instructions and start testing!
+5. Follow the instructions and start testing!
 
 ## Validation Workflow
 

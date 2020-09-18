@@ -35,6 +35,7 @@ const transport = nodemailer.createTransport({
  * Keeps track of the current state of the program.
  *
  * "": regular running mode;
+ * "C": loading configurations;
  * "R": ready to rerun;
  * "E0": asking whether to never send emails again;
  * "E1": ready to receive user input for email address;
@@ -45,7 +46,7 @@ const transport = nodemailer.createTransport({
  *
  * @type {string}
  */
-let runMode = "";
+let runMode = "C";
 
 /**
  * User’s remember-email configuration
@@ -250,7 +251,11 @@ function saveConfig(handler = () => {}) {
             handler();
         } else {
             console.log(`${logStyle.fg.green}Configuration save succeeded${logStyle.reset}`);
-            console.log(`${logStyle.fg.yellow}Delete "config.json" to reset all preferences${logStyle.reset}`);
+
+            if (!config.devMode && runMode === "") {
+                console.log(`${logStyle.fg.yellow}Delete "config.json" to reset all preferences${logStyle.reset}`);
+            }
+
             handler();
         }
     });
@@ -966,7 +971,10 @@ function autoSendEmailOrShowPrompt(logBlankLine) {
  * @return {void}
  */
 (function main() {
-    loadOrInitConfig(fetchLocationsJson);
+    loadOrInitConfig(() => {
+        runMode = "";
+        fetchLocationsJson();
+    });
 
     /**
      * Handles keyboard input in the console.
