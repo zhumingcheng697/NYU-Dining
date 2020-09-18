@@ -1,7 +1,7 @@
 {
-  "devMode": false,
+  "devMode": true,
   "autoRunIntervalInMinute": 0,
-  "autoSendEmailAfterRun": 0,
+  "autoSendEmailAfterRun": 1,
   "sendEmailAfterShowingErrors": 0,
   "rememberEmail": 0,
   "rememberedEmail": ""

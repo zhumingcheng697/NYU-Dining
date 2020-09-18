@@ -13,22 +13,22 @@ const locationsXmlUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/location
  * @link https://ourcodeworld.com/articles/read/264/how-to-send-an-email-gmail-outlook-and-zoho-using-nodemailer-in-node-js
  */
 const transport = nodemailer.createTransport({
-    host: "smtp.mailtrap.io",
-    port: 2525,
-    auth: {
-        user: "ae677f881a6c52",
-        pass: "80d9ee8bff404c"
-    }
-    // host: "smtp-mail.outlook.com",
-    // secureConnection: false,
-    // port: 587,
-    // tls: {
-    //     ciphers:'SSLv3'
-    // },
+    // host: "smtp.mailtrap.io",
+    // port: 2525,
     // auth: {
-    //     user: "nyu-dining-test@outlook.com",
-    //     pass: "Dining*2020"
+    //     user: "ae677f881a6c52",
+    //     pass: "80d9ee8bff404c"
     // }
+    host: "smtp-mail.outlook.com",
+    secureConnection: false,
+    port: 587,
+    tls: {
+        ciphers:'SSLv3'
+    },
+    auth: {
+        user: "nyu-dining-test@outlook.com",
+        pass: "Dining*2020"
+    }
 });
 
 /**
