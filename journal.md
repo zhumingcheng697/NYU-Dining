@@ -72,4 +72,14 @@
 
 - Added ability to automatically rerun the test after a set interval when running under `devMode`
 
-- Updated README.md
+- Updated `README.md`
+
+## Week 4
+
+### Monday: September 21, 2020 (3 hours)
+
+- Updated `README.md`
+
+- Reset `config.json`
+
+- Fixed few other places where console logs may show up out of order

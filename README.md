@@ -1,6 +1,6 @@
 # NYU-Dining-Test
 
-**A Script that Fetches NYU Dining Location and Menu Data, Parses and Validates it, and Automatically Emails the Users Should Errors Occur.**
+**A Script that Automatically Fetches NYU Dining Location and Menu Data, Parses and Validates it, and Emails the Users Should Errors Occur.**
 
 ## Features
 
@@ -81,6 +81,16 @@
 
 - If you **do not** want the program to automatically rerun, and **wish for a higher level of automation and flexibility**, set `devMode` to `true` in `config.json`, and set the rest of the properties [according to your preferences](#properties-in-config-file).
 
+    ```
+    {
+      "devMode": true,
+      "autoRunIntervalInMinute": 0,
+
+      ...
+
+    }
+    ```
+
 - If you **do not** want the program to automatically rerun, and **wish for a friendlier user interaction experience**, simply leave `config.json` as is and configure your preferences within the program.
 
 ## Properties in Config File
@@ -103,7 +113,7 @@
 
 - `rememberEmail` - **Required**. *Number*. Determines if the program should remember the users’ inputted email address. Default to `0`. Valid values are `-1`, `0`, and `1`.
     
-    > Set to `1` to let the program remember the first valid email address you inputted through the UI if `rememberedEmail` is set to `""`, or set to `-1` to never let the program remember any inputted email addresses (unless `rememberedEmail` is already set to a valid email address, in which case `rememberedEmail` will always be used regardless of the value of `rememberEmail`).
+    > Set to `1` to let the program remember the first valid email address you inputted through keyboard if `rememberedEmail` is set to `""`, or set to `-1` to never let the program remember any inputted email addresses (unless `rememberedEmail` is already set to a valid email address, in which case `rememberedEmail` will always be used regardless of the value of `rememberEmail`).
 
 - `rememberedEmail` - **Required**. *String*. The remembered users’ inputted email address, or an empty string if it does not exist. Default to `""`. Valid values are `""` and valid email addresses.
     

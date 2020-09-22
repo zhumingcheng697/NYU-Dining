@@ -381,17 +381,16 @@ function validateLocation(jsonIndex = 0) {
      * @return {void}
      */
     function validateNext() {
-        if (jsonIndex < locationsJson.length - 1) {
-            setTimeout(() => {
-                console.log("");
-                validateLocation(jsonIndex + 1);
-            }, 50);
-        } else {
-            // allTestsCompleted = true;
+        setTimeout(() => {
             console.log("");
-            console.log(`${logStyle.fg.white}------All tests completed------${logStyle.reset}`);
-            passedLocationsReport(true);
-        }
+
+            if (jsonIndex < locationsJson.length - 1) {
+                validateLocation(jsonIndex + 1);
+            } else {
+                console.log(`${logStyle.fg.white}------All tests completed------${logStyle.reset}`);
+                passedLocationsReport(true);
+            }
+        }, 50);
     }
 
     try {
@@ -496,10 +495,9 @@ function fetchMenu(url, location, completion = () => {}) {
  */
 function passedLocationsReport(showNextStep = false) {
     if (passedLocations.length > 0) {
-        console.log(`${logStyle.fg.green}The following ${passedLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" passed all tests successfully${logStyle.reset}`);
-        console.log(passedLocations.join(showNextStep ? ", " : "\n"));
+        console.log(`${logStyle.fg.green}The following ${passedLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" passed all tests successfully:${logStyle.reset}\n${passedLocations.join(showNextStep ? ", " : "\n")}`);
     } else {
-        console.error(`${logStyle.fg.red}No locations in "locations.json" passed all tests${logStyle.reset}`);
+        console.warn(`${logStyle.fg.red}No locations in "locations.json" passed all tests${logStyle.reset}`);
     }
 
     if (showNextStep) {
@@ -522,8 +520,7 @@ function passedLocationsReport(showNextStep = false) {
  */
 function noMenuLocationsReport(showNextStep = false) {
     if (noMenuLocations.length > 0) {
-        console.warn(`${logStyle.fg.red}The following ${noMenuLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noMenuLocations.length === 1 ? "has" : "have"} a match in "locations.xml" but had issue accessing menu${noMenuLocations.length === 1 ? "" : "s"}${logStyle.reset}`);
-        console.log(noMenuLocations.join(showNextStep ? ", " : "\n"));
+        console.log(`${logStyle.fg.red}The following ${noMenuLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noMenuLocations.length === 1 ? "has" : "have"} a match in "locations.xml" but had issue accessing menu${noMenuLocations.length === 1 ? "" : "s"}:${logStyle.reset}\n${noMenuLocations.join(showNextStep ? ", " : "\n")}`);
     } else {
         if (!showNextStep) {
             console.log(`${logStyle.fg.green}No locations in "locations.json" failed the menu test${logStyle.reset}`);
@@ -551,8 +548,7 @@ function noMenuLocationsReport(showNextStep = false) {
  */
 function noXmlMatchLocationsReport(showNextStep = false) {
     if (noXmlMatchLocations.length > 0) {
-        console.warn(`${logStyle.fg.red}The following ${noXmlMatchLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noXmlMatchLocations.length === 1 ? "does" : "do"} not have a match in "locations.xml"${logStyle.reset}`);
-        console.log(noXmlMatchLocations.join(showNextStep ? ", " : "\n"));
+        console.log(`${logStyle.fg.red}The following ${noXmlMatchLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noXmlMatchLocations.length === 1 ? "does" : "do"} not have a match in "locations.xml":${logStyle.reset}\n${noXmlMatchLocations.join(showNextStep ? ", " : "\n")}`);
     } else {
         if (!showNextStep) {
             console.log(`${logStyle.fg.green}No locations in "locations.json" failed the XML test${logStyle.reset}`);
