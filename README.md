@@ -33,6 +33,11 @@
     ```
     $ node nyu-dining-test.js
     ```
+    or
+    
+    ```
+    $ npm start
+    ```
    
 5. Follow the instructions and start testing!
 
@@ -43,11 +48,11 @@
     ```
     {
       "devMode": true,
-      "autoRunIntervalInMinute": positive_interval_in_minute,
+      "autoRunIntervalInMinute": <positive_interval_in_minute>,
       "autoSendEmailAfterRun": 1,
       "sendEmailAfterShowingErrors": 0,
       "rememberEmail": 0,
-      "rememberedEmail": "your_email_address"
+      "rememberedEmail": <your_email_address>
     }
     ```
 
@@ -56,7 +61,7 @@
     ```
     {
       "devMode": true,
-      "autoRunIntervalInMinute": positive_interval_in_minute,
+      "autoRunIntervalInMinute": <positive_interval_in_minute>,
       "autoSendEmailAfterRun": 0,
       "sendEmailAfterShowingErrors": 1,
       "rememberEmail": 0,
@@ -71,7 +76,7 @@
     ```
     {
       "devMode": true,
-      "autoRunIntervalInMinute": positive_interval_in_minute,
+      "autoRunIntervalInMinute": <positive_interval_in_minute>,
       "autoSendEmailAfterRun": 0,
       "sendEmailAfterShowingErrors": 0,
       "rememberEmail": 0,

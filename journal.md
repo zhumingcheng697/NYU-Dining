@@ -83,3 +83,13 @@
 - Reset `config.json`
 
 - Fixed few other places where console logs may show up out of order
+
+## Week 6
+
+### Thursday: October 8, 2020 (0 hours)
+
+- Added support for running `nyu-dining-test.js` via `npm start`
+
+- Updated `package.json`
+
+- Updated `README.md`
