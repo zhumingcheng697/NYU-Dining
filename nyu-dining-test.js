@@ -1,6 +1,6 @@
 const fs = require('fs');
 const readline = require('readline');
-const fetchFile = require("node-fetch");
+const nodeFetch = require("node-fetch");
 const nodemailer = require("nodemailer");
 const parseXmlStr = require("xml2js").parseString;
 
@@ -270,7 +270,7 @@ function saveConfig(handler = () => {}) {
  */
 function fetchLocationsJson() {
     console.log(`${logStyle.fg.white}------Loading "locations.json"------${logStyle.reset}`);
-    fetchFile(locationsJsonUrl)
+    nodeFetch(locationsJsonUrl)
         .then(res => {
             console.log(`${logStyle.fg.green}"locations.json" load succeeded${logStyle.reset}`);
             return res.text();
@@ -311,7 +311,7 @@ function fetchLocationsJson() {
  */
 function fetchLocationsXml() {
     console.log(`${logStyle.fg.white}------Loading "locations.xml"------${logStyle.reset}`);
-    fetchFile(locationsXmlUrl)
+    nodeFetch(locationsXmlUrl)
         .then(res => {
             console.log(`${logStyle.fg.green}"locations.xml" load succeeded${logStyle.reset}`);
             return res.text();
@@ -450,7 +450,7 @@ function validateLocation(jsonIndex = 0) {
  * @return {void}
  */
 function fetchMenu(url, location, completion = () => {}) {
-    fetchFile(url)
+    nodeFetch(url)
         .then(res => {
             console.log(`${logStyle.fg.green}Menu load succeeded ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`);
             return res.text();
