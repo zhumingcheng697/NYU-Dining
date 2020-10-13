@@ -1,9 +1,9 @@
 const fs = require('fs');
+const he = require("he");
 const readline = require('readline');
 const nodeFetch = require("node-fetch");
 const nodemailer = require("nodemailer");
 const parseXmlStr = require("xml2js").parseString;
-
 const HTMLParser = require('node-html-parser');
 
 const locationsJsonUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.json";
@@ -971,11 +971,7 @@ nodeFetch("https://mobile.nyu.edu/default/dining_nyu_eats_locations_and_menus/in
     }).then(text => {
         try {
             const el = HTMLParser.parse(`${text}`).querySelectorAll(`#kgoui_Rcontent_I1_Rcontent_I1_Ritems li a div.kgoui_list_item_textblock span`);
-            console.log(el.map(e => {
-                return e.childNodes[0].rawText.replace(/&#(\d+);/g, (match, dec) => {
-                    return String.fromCharCode(dec);
-                });
-            }));
+            console.log(el.map(e => he.decode(e.childNodes[0].rawText)));
         } catch (e) {
             console.warn(e);
         }
@@ -991,11 +987,7 @@ nodeFetch("https://nyu-test.modolabs.net/default/chartwells_dining/index")
     }).then(text => {
         try {
             const el = HTMLParser.parse(`${text}`).querySelectorAll(`#kgoui_Rcontent_I1_Rcontent_I1_Ritems li a div.kgoui_list_item_textblock span`);
-            console.log(el.map(e => {
-                return e.childNodes[0].rawText.replace(/&#(\d+);/g, (match, dec) => {
-                    return String.fromCharCode(dec);
-                });
-            }));
+            console.log(el.map(e => he.decode(e.childNodes[0].rawText)));
         } catch (e) {
             console.warn(e);
         }
