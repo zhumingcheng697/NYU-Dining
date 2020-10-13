@@ -93,3 +93,9 @@
 - Updated `package.json`
 
 - Updated `README.md`
+
+## Week 7
+
+### Monday: October 12, 2020 (2 hours)
+
+- Added ability to load and parse HTML and extract location names
