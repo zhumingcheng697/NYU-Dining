@@ -4,6 +4,8 @@ const nodeFetch = require("node-fetch");
 const nodemailer = require("nodemailer");
 const parseXmlStr = require("xml2js").parseString;
 
+const HTMLParser = require('node-html-parser');
+
 const locationsJsonUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.json";
 const locationsXmlUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.xml";
 
@@ -961,58 +963,98 @@ function autoSendEmailOrShowPrompt(logBlankLine) {
     }
 }
 
+nodeFetch("https://mobile.nyu.edu/default/dining_nyu_eats_locations_and_menus/index")
+    .then(res => {
+        console.log(res.status);
+        console.log(res.statusText);
+        return res.text();
+    }).then(text => {
+        try {
+            const el = HTMLParser.parse(`${text}`).querySelectorAll(`#kgoui_Rcontent_I1_Rcontent_I1_Ritems li a div.kgoui_list_item_textblock span`);
+            console.log(el.map(e => {
+                return e.childNodes[0].rawText.replace(/&#(\d+);/g, (match, dec) => {
+                    return String.fromCharCode(dec);
+                });
+            }));
+        } catch (e) {
+            console.warn(e);
+        }
+    }).catch((e) => {
+        console.warn(e);
+    });
+
+nodeFetch("https://nyu-test.modolabs.net/default/chartwells_dining/index")
+    .then(res => {
+        console.log(res.status);
+        console.log(res.statusText);
+        return res.text();
+    }).then(text => {
+        try {
+            const el = HTMLParser.parse(`${text}`).querySelectorAll(`#kgoui_Rcontent_I1_Rcontent_I1_Ritems li a div.kgoui_list_item_textblock span`);
+            console.log(el.map(e => {
+                return e.childNodes[0].rawText.replace(/&#(\d+);/g, (match, dec) => {
+                    return String.fromCharCode(dec);
+                });
+            }));
+        } catch (e) {
+            console.warn(e);
+        }
+    }).catch((e) => {
+        console.warn(e);
+    });
+
 /**
  * Self-invoking main function
  *
  * @return {void}
  */
-(function main() {
-    loadOrInitConfig(() => {
-        runMode = "";
-        fetchLocationsJson();
-    });
-
-    /**
-     * Handles keyboard input in the console.
-     */
-    rl.on('line', (line) => {
-        if (!allTestsCompleted) {
-            return;
-        }
-
-        if (runMode === "") {
-            if (line.toUpperCase() === "E") {
-                errorMsgReport();
-                return;
-            } else if (line.toUpperCase() === "P") {
-                passedLocationsReport();
-            } else if (line.toUpperCase() === "M") {
-                noMenuLocationsReport();
-            } else if (line.toUpperCase() === "X") {
-                noXmlMatchLocationsReport();
-            } else if (line.toUpperCase() === "T") {
-                locationsResultReport();
-            } else if (line.toUpperCase() === "R") {
-                runMode = "R";
-                console.warn(`${logStyle.fg.red}Will rerun all tests. Continue? (y/n)${logStyle.reset}`)
-                return;
-            } else {
-                console.error(`${logStyle.fg.red}Please type in a valid key. (E/P/M/X/T/R)${logStyle.reset}`);
-                return;
-            }
-
-            setTimeout(() => {
-                console.log("");
-                typeKeyPrompt();
-            }, 50);
-        } else if (runMode === "R") {
-            confirmRerun(line);
-        } else if (runMode === "E1") {
-            handleEmailAddressInput(line);
-        } else if (runMode === "E2") {
-            confirmSendEmail(line);
-        } else if (["E0", "E3", "E4", "E5"].includes(runMode)) {
-            handleEmailRemember(line);
-        }
-    });
-})();
+// (function main() {
+//     loadOrInitConfig(() => {
+//         runMode = "";
+//         fetchLocationsJson();
+//     });
+//
+//     /**
+//      * Handles keyboard input in the console.
+//      */
+//     rl.on('line', (line) => {
+//         if (!allTestsCompleted) {
+//             return;
+//         }
+//
+//         if (runMode === "") {
+//             if (line.toUpperCase() === "E") {
+//                 errorMsgReport();
+//                 return;
+//             } else if (line.toUpperCase() === "P") {
+//                 passedLocationsReport();
+//             } else if (line.toUpperCase() === "M") {
+//                 noMenuLocationsReport();
+//             } else if (line.toUpperCase() === "X") {
+//                 noXmlMatchLocationsReport();
+//             } else if (line.toUpperCase() === "T") {
+//                 locationsResultReport();
+//             } else if (line.toUpperCase() === "R") {
+//                 runMode = "R";
+//                 console.warn(`${logStyle.fg.red}Will rerun all tests. Continue? (y/n)${logStyle.reset}`)
+//                 return;
+//             } else {
+//                 console.error(`${logStyle.fg.red}Please type in a valid key. (E/P/M/X/T/R)${logStyle.reset}`);
+//                 return;
+//             }
+//
+//             setTimeout(() => {
+//                 console.log("");
+//                 typeKeyPrompt();
+//             }, 50);
+//         } else if (runMode === "R") {
+//             confirmRerun(line);
+//         } else if (runMode === "E1") {
+//             handleEmailAddressInput(line);
+//         } else if (runMode === "E2") {
+//             confirmSendEmail(line);
+//         } else if (["E0", "E3", "E4", "E5"].includes(runMode)) {
+//             handleEmailRemember(line);
+//         }
+//     });
+// })();
