@@ -93,15 +93,3 @@
 - Updated `package.json`
 
 - Updated `README.md`
-
-## Week 7
-
-### Monday: October 12, 2020 (2 hours)
-
-- Added ability to load and parse HTML and extract location names
-
-### Tuesday: October 13, 2020 (2 hours)
-
-- Improved type safety and code readability
-
-- Streamlined testing for production and dev sites
