@@ -8,6 +8,8 @@ const HTMLParser = require('node-html-parser');
 
 const locationsJsonUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.json";
 const locationsXmlUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.xml";
+const prodSiteUrl = "https://mobile.nyu.edu/default/dining_nyu_eats_locations_and_menus/index";
+const devSiteUrl = "https://nyu-test.modolabs.net/default/chartwells_dining/index";
 
 /**
  * Configures nodemailer to be able to send emails
@@ -100,6 +102,22 @@ let locationsJson = [];
  * @type {[Object]}
  */
 let locationsXml = [];
+
+/**
+ * An array of name of locations parsed from prodSiteUrl
+ *
+ * @see prodSiteUrl
+ * @type {[string]}
+ */
+let prodSiteLocations = [];
+
+/**
+ * An array of name of locations parsed from devSiteUrl
+ *
+ * @see devSiteUrl
+ * @type {[string]}
+ */
+let devSiteLocations = [];
 
 /**
  * An array of name of locations in locationsJson that passed all tests (validateLocation and fetchMenu)
@@ -352,8 +370,23 @@ function fetchLocationsXml() {
                             });
 
                             console.log(`${logStyle.fg.green}${locationsXml.length} location${locationsXml.length === 1 ? "" : "s"} found in "locations.xml"${logStyle.reset}`);
-                            console.log("");
-                            validateLocation();
+                            // console.log("");
+                            // validateLocation();
+
+
+
+
+                            fetchLocationsFromSite(true, () => {
+                                fetchLocationsFromSite(false, () => {
+                                    console.log("");
+                                    validateLocation();
+                                });
+                            });
+
+
+
+
+
                         } else {
                             logAndPush(`${logStyle.fg.red}Fatal Error: No locations found in "locations.xml"${logStyle.reset}`, "e");
                             terminateTest();
@@ -369,6 +402,54 @@ function fetchLocationsXml() {
             });
         }).catch(() => {
             logAndPush(`${logStyle.fg.red}Fatal Error: "locations.xml" load failed${logStyle.reset}`, "e");
+            terminateTest();
+        });
+}
+
+/**
+ * Fetches, and parses location data from prodSiteUrl or devSiteUrl
+ *
+ * @see prodSiteUrl
+ * @see devSiteUrl
+ * @param dev {boolean} Whether to load from devSiteUrl
+ * @param handler {function} Runs after locations are successfully parsed
+ * @return {void}
+ */
+function fetchLocationsFromSite(dev, handler = () => {}) {
+    console.log(`${logStyle.fg.white}------Loading ${dev ? "dev" : "production"} site------${logStyle.reset}`);
+    nodeFetch(dev ? devSiteUrl : prodSiteUrl)
+        .then(res => {
+            console.log(`${res.status} ${res.statusText}`);
+            console.log(`${logStyle.fg.green}${dev ? "Dev" : "Production"} site load succeeded${logStyle.reset}`);
+            return res.text();
+        }).then(text => {
+            const site = HTMLParser.parse(`${text}`);
+            if (site.valid) {
+                console.log(`${logStyle.fg.green}${dev ? "Dev" : "Production"} site parse succeeded${logStyle.reset}`);
+                const locationNames = site.querySelectorAll(`#kgoui_Rcontent_I1_Rcontent_I1_Ritems li a div.kgoui_list_item_textblock span`)
+                    .map(e => {
+                        return he.decode(e.childNodes[0].rawText);
+                    });
+
+                if (locationNames.length > 0) {
+                    if (dev) {
+                        devSiteLocations = locationNames;
+                    } else {
+                        prodSiteLocations = locationNames;
+                    }
+                    console.log(locationNames);
+                    console.log(`${logStyle.fg.green}${locationNames.length} location${locationsXml.length === 1 ? "" : "s"} found on ${dev ? "dev" : "production"} site${logStyle.reset}`);
+                    handler();
+                } else {
+                    logAndPush(`${logStyle.fg.red}Fatal Error: No locations found on ${dev ? "dev" : "production"} site${logStyle.reset}`, "e");
+                    terminateTest();
+                }
+            } else {
+                logAndPush(`${logStyle.fg.red}Fatal Error: ${dev ? "dev" : "production"} site parse failed${logStyle.reset}`, "e");
+                terminateTest();
+            }
+        }).catch(() => {
+            logAndPush(`${logStyle.fg.red}Fatal Error: ${dev ? "dev" : "production"} site load failed${logStyle.reset}`, "e");
             terminateTest();
         });
 }
@@ -980,40 +1061,6 @@ function autoSendEmailOrShowPrompt(logBlankLine) {
     } else {
         showPromptWithTimeout();
     }
-}
-
-function fetchFromSites() {
-    nodeFetch("https://mobile.nyu.edu/default/dining_nyu_eats_locations_and_menus/index")
-        .then(res => {
-            console.log(res.status);
-            console.log(res.statusText);
-            return res.text();
-        }).then(text => {
-            try {
-                const el = HTMLParser.parse(`${text}`).querySelectorAll(`#kgoui_Rcontent_I1_Rcontent_I1_Ritems li a div.kgoui_list_item_textblock span`);
-                console.log(el.map(e => he.decode(e.childNodes[0].rawText)));
-            } catch (e) {
-                console.warn(e);
-            }
-        }).catch((e) => {
-            console.warn(e);
-        });
-
-    nodeFetch("https://nyu-test.modolabs.net/default/chartwells_dining/index")
-        .then(res => {
-            console.log(res.status);
-            console.log(res.statusText);
-            return res.text();
-        }).then(text => {
-            try {
-                const el = HTMLParser.parse(`${text}`).querySelectorAll(`#kgoui_Rcontent_I1_Rcontent_I1_Ritems li a div.kgoui_list_item_textblock span`);
-                console.log(el.map(e => he.decode(e.childNodes[0].rawText)));
-            } catch (e) {
-                console.warn(e);
-            }
-        }).catch((e) => {
-            console.warn(e);
-        });
 }
 
 /**
