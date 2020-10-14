@@ -36,6 +36,18 @@ const transport = nodemailer.createTransport({
 });
 
 /**
+ * All available statuses of a dining location.
+ *
+ * @type {{passed: string, xmlError: string, menuError: string, otherError: string}}
+ */
+const LocationStatus = {
+    passed: "PASSED",
+    xmlError: "* XML Error *",
+    menuError: "* Menu Error *",
+    otherError: "* Other Error *"
+}
+
+/**
  * All available states of the program.
  *
  * @type {{configuring: number, standard: number, willRerun: number, willDisableEmail: number, willReceiveEmail: number, willConfirmEmail: number, willRememberEmail: number, willForgetEmail: number, willAutoSendEmails: number}}
@@ -53,13 +65,6 @@ const RunMode = {
 };
 
 /**
- * Keeps track of the current state of the program.
- *
- * @type {number}
- */
-let currentRunMode = RunMode.configuring;
-
-/**
  * User’s remember-email configuration
  *
  * @type {{devMode: boolean, autoRunIntervalInMinute: number, autoSendEmailAfterRun: number, sendEmailAfterShowingErrors: number, rememberEmail: number, rememberedEmail: string}}
@@ -72,6 +77,13 @@ let currentConfig = {
     rememberEmail: 0,
     rememberedEmail: ""
 };
+
+/**
+ * Keeps track of the current state of the program.
+ *
+ * @type {number}
+ */
+let currentRunMode = RunMode.configuring;
 
 /**
  * Timeout id for auto rerun
@@ -120,6 +132,13 @@ let prodSiteLocations = [];
 let devSiteLocations = [];
 
 /**
+ * Key-value pairs showing the testing results of each location
+ *
+ * @type {Object}
+ */
+let locationResults = {};
+
+/**
  * An array of name of locations in locationsJson that passed all tests (validateLocation and fetchMenu)
  *
  * @see validateLocation
@@ -127,7 +146,7 @@ let devSiteLocations = [];
  * @see locationsJson
  * @type {[string]}
  */
-let passedLocations = [];
+// let passedLocations = [];
 
 /**
  * An array of name of locations in locationsJson that passed validateLocation but failed fetchMenu
@@ -137,7 +156,7 @@ let passedLocations = [];
  * @see locationsJson
  * @type {[string]}
  */
-let noMenuLocations = [];
+// let noMenuLocations = [];
 
 /**
  * An array of name of locations in locationsJson that failed validateLocation
@@ -146,7 +165,7 @@ let noMenuLocations = [];
  * @see locationsJson
  * @type {[string]}
  */
-let noXmlMatchLocations = [];
+// let noXmlMatchLocations = [];
 
 /**
  * An array of thrown error messages in validateLocation and fetchMenu
@@ -384,10 +403,10 @@ function fetchLocationsXml() {
 
 
                             fetchLocationsFromSite(true, () => {
-                                fetchLocationsFromSite(false, () => {
+                                // fetchLocationsFromSite(false, () => {
                                     console.log("");
                                     validateLocation();
-                                });
+                                // });
                             });
 
 
@@ -434,10 +453,7 @@ function fetchLocationsFromSite(dev, handler = () => {}) {
             const site = HTMLParser.parse(`${text}`);
             if (site.valid) {
                 console.log(`${logStyle.fg.green}${dev ? "Dev" : "Production"} site parse succeeded${logStyle.reset}`);
-                const locationNames = site.querySelectorAll(`#kgoui_Rcontent_I1_Rcontent_I1_Ritems li a div.kgoui_list_item_textblock span`)
-                    .map(e => {
-                        return he.decode(e.childNodes[0].rawText);
-                    });
+                const locationNames = site.querySelectorAll(`#kgoui_Rcontent_I1_Rcontent_I1_Ritems li a div.kgoui_list_item_textblock span`).map(e => he.decode(e.childNodes[0].rawText));
 
                 if (locationNames.length > 0) {
                     if (dev) {
@@ -445,7 +461,7 @@ function fetchLocationsFromSite(dev, handler = () => {}) {
                     } else {
                         prodSiteLocations = locationNames;
                     }
-                    // console.log(locationNames);
+
                     console.log(`${logStyle.fg.green}${locationNames.length} location${locationsXml.length === 1 ? "" : "s"} found on ${dev ? "dev" : "production"} site${logStyle.reset}`);
                     handler();
                 } else {
@@ -524,12 +540,14 @@ function validateLocation(jsonIndex = 0) {
                         fetchMenu(menuUrl, loc.name, validateNext);
                     }
                 } else {
-                    noXmlMatchLocations.push(loc.name);
+                    // noXmlMatchLocations.push(loc.name);
+                    locationResults[loc.name] = LocationStatus.xmlError;
                     validateNext();
                 }
             } catch (e) {
                 logAndPush(`${logStyle.fg.red}Something went wrong when trying to access "${loc.name}" in "locations.xml"${logStyle.reset}`, "e");
-                noXmlMatchLocations.push(loc.name);
+                // noXmlMatchLocations.push(loc.name);
+                locationResults[loc.name] = LocationStatus.xmlError;
                 validateNext();
             }
         }, 50);
@@ -560,25 +578,42 @@ function fetchMenu(url, location, completion = () => {}) {
 
                 if (menu.menus === -1) {
                     logAndPush(`${logStyle.fg.red}Field "menus" does not exist ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`, "e");
-                    noMenuLocations.push(location);
+                    // noMenuLocations.push(location);
+                    locationResults[location] = LocationStatus.menuError;
                 } else if (menu.menus === 0) {
                     logAndPush(`${logStyle.fg.red}No menus found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`, "e");
-                    noMenuLocations.push(location);
+                    // noMenuLocations.push(location);
+                    locationResults[location] = LocationStatus.menuError;
                 } else {
                     console.log(`${logStyle.fg.green}${menu.menus} menu${menu.menus === 1 ? "" : "s"} found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`);
-                    passedLocations.push(location);
+                    locationResults[location] = LocationStatus.passed;
+                    // passedLocations.push(location);
                 }
                 completion();
             } catch (e) {
                 logAndPush(`${logStyle.fg.red}Menu parse failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`, "e");
-                noMenuLocations.push(location);
+                locationResults[location] = LocationStatus.menuError;
+                // noMenuLocations.push(location);
                 completion();
             }
         }).catch(() => {
             logAndPush(`${logStyle.fg.red}Menu load failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`, "e");
-            noMenuLocations.push(location);
+            locationResults[location] = LocationStatus.menuError;
+            // noMenuLocations.push(location);
             completion();
         });
+}
+
+/**
+ * Returns the name of locations in locationResults with the status locationStatus
+ *
+ * @see LocationStatus
+ * @see locationResults
+ * @param locationStatus {string} Status to filter for
+ * @return {[string]} Location with locationStatus
+ */
+function locationsWithStatus(locationStatus) {
+    return Object.keys(locationResults).filter(location => locationResults[location] === locationStatus);
 }
 
 /**
@@ -592,6 +627,7 @@ function fetchMenu(url, location, completion = () => {}) {
  * @return {void}
  */
 function passedLocationsReport(showNextStep = false) {
+    const passedLocations = locationsWithStatus(LocationStatus.passed);
     if (fatalErrorOccurred) {
         console.warn(`${logStyle.fg.red}A fatal error has occurred during the test${logStyle.reset}`);
     } else if (passedLocations.length > 0) {
@@ -619,6 +655,8 @@ function passedLocationsReport(showNextStep = false) {
  * @return {void}
  */
 function noMenuLocationsReport(showNextStep = false) {
+    const noMenuLocations = locationsWithStatus(LocationStatus.menuError);
+
     if (fatalErrorOccurred) {
         console.warn(`${logStyle.fg.red}A fatal error has occurred during the test${logStyle.reset}`);
     } else if (noMenuLocations.length > 0) {
@@ -649,6 +687,8 @@ function noMenuLocationsReport(showNextStep = false) {
  * @return {void}
  */
 function noXmlMatchLocationsReport(showNextStep = false) {
+    const noXmlMatchLocations = locationsWithStatus(LocationStatus.xmlError);
+
     if (fatalErrorOccurred) {
         console.warn(`${logStyle.fg.red}A fatal error has occurred during the test${logStyle.reset}`);
     } else if (noXmlMatchLocations.length > 0) {
@@ -679,10 +719,16 @@ function locationsResultReport() {
         return;
     }
 
+    // console.table(locationsJson.map(loc => {
+    //     return {
+    //         location: loc.name,
+    //         result: (noXmlMatchLocations.includes(loc.name) ? LocationStatus.xmlError : (noMenuLocations.includes(loc.name) ? LocationStatus.menuError : (passedLocations.includes(loc.name) ? LocationStatus.passed : LocationStatus.otherError)))
+    //     };
+    // }));
     console.table(locationsJson.map(loc => {
         return {
             location: loc.name,
-            result: (noXmlMatchLocations.includes(loc.name) ? "* XML Error *" : (noMenuLocations.includes(loc.name) ? "* Menu Error *" : (passedLocations.includes(loc.name) ? "PASSED" : "* Other Error *")))
+            result: (locationResults[loc.name] || LocationStatus.otherError)
         };
     }));
 }
@@ -962,14 +1008,18 @@ function terminateTest() {
  */
 function rerunTest() {
     clearTimeout(autoRerunId);
+    currentRunMode = RunMode.standard;
     locationsJson = [];
     locationsXml = [];
-    passedLocations = [];
-    noMenuLocations = [];
-    noXmlMatchLocations = [];
+    prodSiteLocations = [];
+    devSiteLocations = [];
+    // passedLocations = [];
+    // noMenuLocations = [];
+    // noXmlMatchLocations = [];
+    locationResults = {};
     allErrorMsg = [];
     allTestsCompleted = false;
-    currentRunMode = RunMode.standard;
+    fatalErrorOccurred = false;
     console.log("");
     fetchLocationsJson();
 }
