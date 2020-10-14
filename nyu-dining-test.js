@@ -165,6 +165,13 @@ let allErrorMsg = [];
 let allTestsCompleted = false;
 
 /**
+ * Determines if an fatal error has occurred
+ *
+ * @type {boolean}
+ */
+let fatalErrorOccurred = false;
+
+/**
  * Makes the console logs colorful.
  *
  * @link https://stackoverflow.com/a/40560590
@@ -419,7 +426,8 @@ function fetchLocationsFromSite(dev, handler = () => {}) {
     console.log(`${logStyle.fg.white}------Loading ${dev ? "dev" : "production"} site------${logStyle.reset}`);
     nodeFetch(dev ? devSiteUrl : prodSiteUrl)
         .then(res => {
-            console.log(`${res.status} ${res.statusText}`);
+            const statusPrefix = Math.floor(res.status / 100);
+            console.log(`${statusPrefix === 2 ? logStyle.fg.green : ([4, 5].includes(statusPrefix) ? logStyle.fg.red : "")}${res.status} ${res.statusText}${logStyle.reset}`);
             console.log(`${logStyle.fg.green}${dev ? "Dev" : "Production"} site load succeeded${logStyle.reset}`);
             return res.text();
         }).then(text => {
@@ -437,7 +445,7 @@ function fetchLocationsFromSite(dev, handler = () => {}) {
                     } else {
                         prodSiteLocations = locationNames;
                     }
-                    console.log(locationNames);
+                    // console.log(locationNames);
                     console.log(`${logStyle.fg.green}${locationNames.length} location${locationsXml.length === 1 ? "" : "s"} found on ${dev ? "dev" : "production"} site${logStyle.reset}`);
                     handler();
                 } else {
@@ -584,7 +592,9 @@ function fetchMenu(url, location, completion = () => {}) {
  * @return {void}
  */
 function passedLocationsReport(showNextStep = false) {
-    if (passedLocations.length > 0) {
+    if (fatalErrorOccurred) {
+        console.warn(`${logStyle.fg.red}A fatal error has occurred during the test${logStyle.reset}`);
+    } else if (passedLocations.length > 0) {
         console.log(`${logStyle.fg.green}The following ${passedLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" passed all tests successfully:${logStyle.reset}\n${passedLocations.join(showNextStep ? ", " : "\n")}`);
     } else {
         console.warn(`${logStyle.fg.red}No locations in "locations.json" passed all tests${logStyle.reset}`);
@@ -609,7 +619,9 @@ function passedLocationsReport(showNextStep = false) {
  * @return {void}
  */
 function noMenuLocationsReport(showNextStep = false) {
-    if (noMenuLocations.length > 0) {
+    if (fatalErrorOccurred) {
+        console.warn(`${logStyle.fg.red}A fatal error has occurred during the test${logStyle.reset}`);
+    } else if (noMenuLocations.length > 0) {
         console.log(`${logStyle.fg.red}The following ${noMenuLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noMenuLocations.length === 1 ? "has" : "have"} a match in "locations.xml" but had issue accessing menu${noMenuLocations.length === 1 ? "" : "s"}:${logStyle.reset}\n${noMenuLocations.join(showNextStep ? ", " : "\n")}`);
     } else {
         if (!showNextStep) {
@@ -637,7 +649,9 @@ function noMenuLocationsReport(showNextStep = false) {
  * @return {void}
  */
 function noXmlMatchLocationsReport(showNextStep = false) {
-    if (noXmlMatchLocations.length > 0) {
+    if (fatalErrorOccurred) {
+        console.warn(`${logStyle.fg.red}A fatal error has occurred during the test${logStyle.reset}`);
+    } else if (noXmlMatchLocations.length > 0) {
         console.log(`${logStyle.fg.red}The following ${noXmlMatchLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noXmlMatchLocations.length === 1 ? "does" : "do"} not have a match in "locations.xml":${logStyle.reset}\n${noXmlMatchLocations.join(showNextStep ? ", " : "\n")}`);
     } else {
         if (!showNextStep) {
@@ -657,7 +671,10 @@ function noXmlMatchLocationsReport(showNextStep = false) {
  * @return {void}
  */
 function locationsResultReport() {
-    if (locationsJson.length === 0) {
+    if (fatalErrorOccurred) {
+        console.warn(`${logStyle.fg.red}A fatal error has occurred during the test${logStyle.reset}`);
+        return;
+    } else if (locationsJson.length === 0) {
         console.error(`${logStyle.fg.red}No locations loaded from "locations.json"${logStyle.reset}`);
         return;
     }
@@ -932,7 +949,7 @@ function typeKeyPrompt() {
  */
 function terminateTest() {
     setTimeout(() => {
-        // allTestsCompleted = true;
+        fatalErrorOccurred = true;
         console.log(`${logStyle.fg.white}------Test terminated------${logStyle.reset}`);
         autoSendEmailOrShowPrompt(false);
     }, 50);
