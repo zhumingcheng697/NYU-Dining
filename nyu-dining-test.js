@@ -139,35 +139,6 @@ let devSiteLocations = [];
 let locationResults = {};
 
 /**
- * An array of name of locations in locationsJson that passed all tests (validateLocation and fetchMenu)
- *
- * @see validateLocation
- * @see fetchMenu
- * @see locationsJson
- * @type {[string]}
- */
-// let passedLocations = [];
-
-/**
- * An array of name of locations in locationsJson that passed validateLocation but failed fetchMenu
- *
- * @see validateLocation
- * @see fetchMenu
- * @see locationsJson
- * @type {[string]}
- */
-// let noMenuLocations = [];
-
-/**
- * An array of name of locations in locationsJson that failed validateLocation
- *
- * @see validateLocation
- * @see locationsJson
- * @type {[string]}
- */
-// let noXmlMatchLocations = [];
-
-/**
  * An array of thrown error messages in validateLocation and fetchMenu
  *
  * @see validateLocation
@@ -312,6 +283,22 @@ function saveConfig(handler = () => {}) {
             handler();
         }
     });
+}
+
+/**
+ * Sets the status of a location.
+ *
+ * @see LocationStatus
+ * @param location {string} Name of the location
+ * @param status {string} Status of the location
+ * @return {void}
+ */
+function setLocationStatus(location, status) {
+    if (typeof locationResults[location] === "undefined") {
+        locationResults[location] = [status];
+    } else {
+        locationResults[location].push(status);
+    }
 }
 
 /**
@@ -540,14 +527,14 @@ function validateLocation(jsonIndex = 0) {
                         fetchMenu(menuUrl, loc.name, validateNext);
                     }
                 } else {
-                    // noXmlMatchLocations.push(loc.name);
-                    locationResults[loc.name] = LocationStatus.xmlError;
+                    setLocationStatus(loc.name, LocationStatus.xmlError);
+                    // locationResults[loc.name] = LocationStatus.xmlError;
                     validateNext();
                 }
             } catch (e) {
                 logAndPush(`${logStyle.fg.red}Something went wrong when trying to access "${loc.name}" in "locations.xml"${logStyle.reset}`, "e");
-                // noXmlMatchLocations.push(loc.name);
-                locationResults[loc.name] = LocationStatus.xmlError;
+                setLocationStatus(loc.name, LocationStatus.xmlError);
+                // locationResults[loc.name] = LocationStatus.xmlError;
                 validateNext();
             }
         }, 50);
@@ -578,28 +565,28 @@ function fetchMenu(url, location, completion = () => {}) {
 
                 if (menu.menus === -1) {
                     logAndPush(`${logStyle.fg.red}Field "menus" does not exist ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`, "e");
-                    // noMenuLocations.push(location);
-                    locationResults[location] = LocationStatus.menuError;
+                    setLocationStatus(location, LocationStatus.menuError);
+                    // locationResults[location] = LocationStatus.menuError;
                 } else if (menu.menus === 0) {
                     logAndPush(`${logStyle.fg.red}No menus found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`, "e");
-                    // noMenuLocations.push(location);
-                    locationResults[location] = LocationStatus.menuError;
+                    setLocationStatus(location, LocationStatus.menuError);
+                    // locationResults[location] = LocationStatus.menuError;
                 } else {
                     console.log(`${logStyle.fg.green}${menu.menus} menu${menu.menus === 1 ? "" : "s"} found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`);
-                    locationResults[location] = LocationStatus.passed;
-                    // passedLocations.push(location);
+                    setLocationStatus(location, LocationStatus.passed);
+                    // locationResults[location] = LocationStatus.passed;
                 }
                 completion();
             } catch (e) {
                 logAndPush(`${logStyle.fg.red}Menu parse failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`, "e");
-                locationResults[location] = LocationStatus.menuError;
-                // noMenuLocations.push(location);
+                setLocationStatus(location, LocationStatus.menuError);
+                // locationResults[location] = LocationStatus.menuError;
                 completion();
             }
         }).catch(() => {
             logAndPush(`${logStyle.fg.red}Menu load failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`, "e");
-            locationResults[location] = LocationStatus.menuError;
-            // noMenuLocations.push(location);
+            setLocationStatus(location, LocationStatus.menuError);
+            // locationResults[location] = LocationStatus.menuError;
             completion();
         });
 }
@@ -613,7 +600,7 @@ function fetchMenu(url, location, completion = () => {}) {
  * @return {[string]} Location with locationStatus
  */
 function locationsWithStatus(locationStatus) {
-    return Object.keys(locationResults).filter(location => locationResults[location] === locationStatus);
+    return Object.keys(locationResults).filter(location => locationResults[location].includes(locationStatus));
 }
 
 /**
@@ -719,16 +706,10 @@ function locationsResultReport() {
         return;
     }
 
-    // console.table(locationsJson.map(loc => {
-    //     return {
-    //         location: loc.name,
-    //         result: (noXmlMatchLocations.includes(loc.name) ? LocationStatus.xmlError : (noMenuLocations.includes(loc.name) ? LocationStatus.menuError : (passedLocations.includes(loc.name) ? LocationStatus.passed : LocationStatus.otherError)))
-    //     };
-    // }));
     console.table(locationsJson.map(loc => {
         return {
             location: loc.name,
-            result: (locationResults[loc.name] || LocationStatus.otherError)
+            result: (locationResults[loc.name] ? locationResults[loc.name].join("\n") : LocationStatus.otherError)
         };
     }));
 }
@@ -1013,9 +994,6 @@ function rerunTest() {
     locationsXml = [];
     prodSiteLocations = [];
     devSiteLocations = [];
-    // passedLocations = [];
-    // noMenuLocations = [];
-    // noXmlMatchLocations = [];
     locationResults = {};
     allErrorMsg = [];
     allTestsCompleted = false;
