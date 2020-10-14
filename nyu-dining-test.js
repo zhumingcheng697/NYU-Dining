@@ -3,13 +3,62 @@ const he = require("he");
 const readline = require('readline');
 const nodeFetch = require("node-fetch");
 const nodemailer = require("nodemailer");
-const parseXmlStr = require("xml2js").parseString;
+const parseXml = require("xml2js").parseString;
 const HTMLParser = require('node-html-parser');
 
 const locationsJsonUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.json";
 const locationsXmlUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.xml";
 const prodSiteUrl = "https://mobile.nyu.edu/default/dining_nyu_eats_locations_and_menus/index";
 const devSiteUrl = "https://nyu-test.modolabs.net/default/chartwells_dining/index";
+
+/**
+ * Makes the console logs colorful.
+ *
+ * @link https://stackoverflow.com/a/40560590
+ * @type {Object}
+ */
+const logStyle = {
+    reset: "\x1b[0m",
+    bright: "\x1b[1m",
+    dim: "\x1b[2m",
+    underscore: "\x1b[4m",
+    blink: "\x1b[5m",
+    reverse: "\x1b[7m",
+    hidden: "\x1b[8m",
+    fg: {
+        black: "\x1b[30m",
+        red: "\x1b[31m",
+        green: "\x1b[32m",
+        yellow: "\x1b[33m",
+        blue: "\x1b[34m",
+        magenta: "\x1b[35m",
+        cyan: "\x1b[36m",
+        white: "\x1b[37m",
+        crimson: "\x1b[38m"
+    },
+    bg: {
+        black: "\x1b[40m",
+        red: "\x1b[41m",
+        green: "\x1b[42m",
+        yellow: "\x1b[43m",
+        blue: "\x1b[44m",
+        magenta: "\x1b[45m",
+        cyan: "\x1b[46m",
+        white: "\x1b[47m",
+        crimson: "\x1b[48m"
+    }
+};
+
+/**
+ * Reads the keyboard input from the console.
+ *
+ * @link http://logan.tw/posts/2015/12/12/read-lines-from-stdin-in-nodejs/
+ */
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+    terminal: false
+});
 
 /**
  * Configures nodemailer to be able to send emails
@@ -38,7 +87,7 @@ const transport = nodemailer.createTransport({
 /**
  * All available statuses of a dining location.
  *
- * @type {{passed: string, xmlError: string, menuError: string, otherError: string}}
+ * @type {Object.<string, string>}
  */
 const LocationStatus = {
     passed: "PASSED",
@@ -50,7 +99,7 @@ const LocationStatus = {
 /**
  * All available states of the program.
  *
- * @type {{configuring: number, standard: number, willRerun: number, willDisableEmail: number, willReceiveEmail: number, willConfirmEmail: number, willRememberEmail: number, willForgetEmail: number, willAutoSendEmails: number}}
+ * @type {Object.<string, number>}
  */
 const RunMode = {
     configuring: 0,
@@ -134,7 +183,7 @@ let devSiteLocations = [];
 /**
  * Key-value pairs showing the testing results of each location
  *
- * @type {Object}
+ * @type {Object.<string, [string]>}
  */
 let locationResults = {};
 
@@ -160,55 +209,6 @@ let allTestsCompleted = false;
  * @type {boolean}
  */
 let fatalErrorOccurred = false;
-
-/**
- * Makes the console logs colorful.
- *
- * @link https://stackoverflow.com/a/40560590
- * @type {Object}
- */
-const logStyle = {
-    reset: "\x1b[0m",
-    bright: "\x1b[1m",
-    dim: "\x1b[2m",
-    underscore: "\x1b[4m",
-    blink: "\x1b[5m",
-    reverse: "\x1b[7m",
-    hidden: "\x1b[8m",
-    fg: {
-        black: "\x1b[30m",
-        red: "\x1b[31m",
-        green: "\x1b[32m",
-        yellow: "\x1b[33m",
-        blue: "\x1b[34m",
-        magenta: "\x1b[35m",
-        cyan: "\x1b[36m",
-        white: "\x1b[37m",
-        crimson: "\x1b[38m"
-    },
-    bg: {
-        black: "\x1b[40m",
-        red: "\x1b[41m",
-        green: "\x1b[42m",
-        yellow: "\x1b[43m",
-        blue: "\x1b[44m",
-        magenta: "\x1b[45m",
-        cyan: "\x1b[46m",
-        white: "\x1b[47m",
-        crimson: "\x1b[48m"
-    }
-};
-
-/**
- * Reads the keyboard input from the console.
- *
- * @link http://logan.tw/posts/2015/12/12/read-lines-from-stdin-in-nodejs/
- */
-let rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    terminal: false
-});
 
 /**
  * Tries to load currentConfig from local, or else initialize one with the default values
@@ -356,7 +356,7 @@ function fetchLocationsXml() {
             console.log(`${logStyle.fg.green}"locations.xml" load succeeded${logStyle.reset}`);
             return res.text();
         }).then(text => {
-            parseXmlStr(text, (err, xml) => {
+            parseXml(text, (err, xml) => {
                 if (xml) {
                     console.log(`${logStyle.fg.green}"locations.xml" parse succeeded${logStyle.reset}`);
                     try {
@@ -528,13 +528,11 @@ function validateLocation(jsonIndex = 0) {
                     }
                 } else {
                     setLocationStatus(loc.name, LocationStatus.xmlError);
-                    // locationResults[loc.name] = LocationStatus.xmlError;
                     validateNext();
                 }
             } catch (e) {
                 logAndPush(`${logStyle.fg.red}Something went wrong when trying to access "${loc.name}" in "locations.xml"${logStyle.reset}`, "e");
                 setLocationStatus(loc.name, LocationStatus.xmlError);
-                // locationResults[loc.name] = LocationStatus.xmlError;
                 validateNext();
             }
         }, 50);
@@ -566,27 +564,22 @@ function fetchMenu(url, location, completion = () => {}) {
                 if (menu.menus === -1) {
                     logAndPush(`${logStyle.fg.red}Field "menus" does not exist ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`, "e");
                     setLocationStatus(location, LocationStatus.menuError);
-                    // locationResults[location] = LocationStatus.menuError;
                 } else if (menu.menus === 0) {
                     logAndPush(`${logStyle.fg.red}No menus found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`, "e");
                     setLocationStatus(location, LocationStatus.menuError);
-                    // locationResults[location] = LocationStatus.menuError;
                 } else {
                     console.log(`${logStyle.fg.green}${menu.menus} menu${menu.menus === 1 ? "" : "s"} found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`);
                     setLocationStatus(location, LocationStatus.passed);
-                    // locationResults[location] = LocationStatus.passed;
                 }
                 completion();
             } catch (e) {
                 logAndPush(`${logStyle.fg.red}Menu parse failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`, "e");
                 setLocationStatus(location, LocationStatus.menuError);
-                // locationResults[location] = LocationStatus.menuError;
                 completion();
             }
         }).catch(() => {
             logAndPush(`${logStyle.fg.red}Menu load failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`, "e");
             setLocationStatus(location, LocationStatus.menuError);
-            // locationResults[location] = LocationStatus.menuError;
             completion();
         });
 }
@@ -697,7 +690,7 @@ function noXmlMatchLocationsReport(showNextStep = false) {
  * @see locationsJson
  * @return {void}
  */
-function locationsResultReport() {
+function locationsTableReport() {
     if (fatalErrorOccurred) {
         console.warn(`${logStyle.fg.red}A fatal error has occurred during the test${logStyle.reset}`);
         return;
@@ -1005,23 +998,23 @@ function rerunTest() {
 /**
  * Sends a new email composed by composeMessage
  *
- * @param receiver {string} Email address to send the email to
+ * @param recipient {string} Email address to send the email to
  * @param finalHandler {function} Handler after sending the email
  * @see composeMessage
  * @return {void}
  */
-function sendEmail(receiver, finalHandler = () => {}) {
+function sendEmail(recipient, finalHandler = () => {}) {
     /**
      * Composes new email message for sendEmail to send
      *
-     * @param receiver {string} Email address to send the email to
+     * @param recipient {string} Email address to send the email to
      * @see sendEmail
      * @return {Object}
      */
-    function composeMessage(receiver) {
+    function composeMessage(recipient) {
         return {
             from: "nyu-dining-test@outlook.com",
-            to: receiver,
+            to: recipient,
             subject: `NYU Dining Testing Error Report (${(new Date()).toLocaleString(undefined, {
                 month: "short", day: "numeric", hour: "numeric", minute: "numeric", timeZoneName: "short"
             })})`,
@@ -1041,9 +1034,9 @@ function sendEmail(receiver, finalHandler = () => {}) {
         };
     }
 
-    console.log(`${logStyle.fg.white}------Emailing error messages to "${receiver}"------${logStyle.reset}`);
+    console.log(`${logStyle.fg.white}------Emailing error messages to "${recipient}"------${logStyle.reset}`);
 
-    transport.sendMail(composeMessage(receiver))
+    transport.sendMail(composeMessage(recipient))
         .then(() => {
             console.log(`${logStyle.fg.green}Email send succeeded${logStyle.reset}`);
         }).catch((e) => {
@@ -1142,7 +1135,7 @@ function autoSendEmailOrShowPrompt(logBlankLine) {
                         noXmlMatchLocationsReport();
                         break;
                     case "T":
-                        locationsResultReport();
+                        locationsTableReport();
                         break;
                     case "R":
                         currentRunMode = RunMode.willRerun;
