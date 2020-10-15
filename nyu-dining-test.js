@@ -375,7 +375,7 @@ function fetchLocationsXml() {
                                     if (loc.name === loc.mapName) {
                                         delete loc.mapName;
                                     } else {
-                                        console.error(`${logStyle.fg.red}Location name "${loc.name}" is not the same as map name "${loc.mapName}" in "locations.xml"${logStyle.reset}`);
+                                        logAndPush(`${logStyle.fg.red}Location name "${loc.name}" is not the same as map name "${loc.mapName}" in "locations.xml"${logStyle.reset}`, "e");
                                     }
 
                                     loc["id"] = loc["eventsFeedConfig"][0]["locationID"][0];
@@ -386,17 +386,20 @@ function fetchLocationsXml() {
                                 }
                             });
 
-                            console.log(`${logStyle.fg.green}${locationsXml.length} location${locationsXml.length === 1 ? "" : "s"} found in "locations.xml"${logStyle.reset}`);
-                            // console.log("");
-                            // validateLocation();
+                            setTimeout(() => {
+                                console.log(`${logStyle.fg.green}${locationsXml.length} location${locationsXml.length === 1 ? "" : "s"} found in "locations.xml"${logStyle.reset}`);
+                                // console.log("");
+                                // validateLocation();
 
 
 
 
-                            fetchLocationsFromSite(() => {
-                                console.log("");
-                                validateLocation();
-                            });
+                                fetchLocationsFromSite(() => {
+                                    console.log("");
+                                    validateLocation();
+                                });
+                            }, 50);
+
 
 
 
@@ -430,7 +433,7 @@ function fetchLocationsXml() {
  * @return {void}
  */
 function fetchLocationsFromSite(handler = () => {}) {
-    console.log(`${logStyle.fg.white}------Loading ${useDevSite ? "dev" : "production"} site------${logStyle.reset}`);
+    console.log(`${logStyle.fg.white}------Loading locations from ${useDevSite ? "dev" : "production"} site------${logStyle.reset}`);
     nodeFetch(useDevSite ? devSiteUrl : prodSiteUrl)
         .then(res => {
             const statusPrefix = Math.floor(res.status / 100);
@@ -516,6 +519,9 @@ function validateLocation(jsonIndex = 0) {
                 logAndPush(`${loc["open"] && loc.schedules >= 1 ? (matchInXml ? logStyle.fg.green : logStyle.fg.red) : ""}"${loc.name}" is${matchInXml ? " " : " not "}found in "locations.xml"${logStyle.reset}`, loc["open"] && loc.schedules >= 1 ? (matchInXml ? "" : "e") : "w");
 
                 if (matchInXml) {
+                    matchInXml.name = loc.name;
+                    delete matchInXml.mapName;
+
                     const menuUrl = matchInXml.menuURL;
                     logAndPush(`${menuUrl ? logStyle.fg.green : logStyle.fg.red}Menu URL is${menuUrl ? " " : " not "}found for "${loc.name}" in "locations.xml"${logStyle.reset}`, menuUrl ? "" : "e");
                     if (menuUrl) {
@@ -755,10 +761,10 @@ function locationsTableReport() {
         return;
     }
 
-    console.table(locationsJson.map(loc => {
+    console.table(Object.keys(locationResults).map(loc => {
         return {
-            location: loc.name,
-            result: (locationResults[loc.name] ? locationResults[loc.name].join(" | ") : LocationStatus.otherError)
+            location: loc,
+            result: (locationResults[loc] ? (locationResults[loc]).join(" | ") : LocationStatus.otherError)
         };
     }));
 }
