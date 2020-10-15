@@ -390,16 +390,7 @@ function fetchLocationsXml() {
 
                             setTimeout(() => {
                                 console.log(`${logStyle.fg.green}${locationsXml.length} location${locationsXml.length === 1 ? "" : "s"} found in "locations.xml"${logStyle.reset}`);
-                                // console.log("");
-                                // validateLocation();
-
-
-
-
-                                fetchLocationsFromSite(() => {
-                                    console.log("");
-                                    validateLocation();
-                                });
+                                fetchLocationsFromSite();
                             }, 50);
 
 
@@ -431,10 +422,9 @@ function fetchLocationsXml() {
  *
  * @see prodSiteUrl
  * @see devSiteUrl
- * @param handler {function} Runs after locations are successfully parsed
  * @return {void}
  */
-function fetchLocationsFromSite(handler = () => {}) {
+function fetchLocationsFromSite() {
     console.log(`${logStyle.fg.white}------Loading locations from ${useDevSite ? "dev" : "production"} site------${logStyle.reset}`);
     nodeFetch(useDevSite ? devSiteUrl : prodSiteUrl)
         .then(res => {
@@ -450,9 +440,8 @@ function fetchLocationsFromSite(handler = () => {}) {
 
                 if (locationNames.length > 0) {
                     siteLocations = locationNames;
-
-                    console.log(`${logStyle.fg.green}${locationNames.length} location${locationsXml.length === 1 ? "" : "s"} found on ${useDevSite ? "dev" : "production"} site${logStyle.reset}`);
-                    handler();
+                    console.log(`${logStyle.fg.green}${locationNames.length} location${locationsXml.length === 1 ? "" : "s"} found on ${useDevSite ? "dev" : "production"} site${logStyle.reset}\n`);
+                    validateLocation();
                 } else {
                     logAndPush(`${logStyle.fg.red}Fatal Error: No locations found on ${useDevSite ? "dev" : "production"} site${logStyle.reset}`, "e");
                     terminateTest();
