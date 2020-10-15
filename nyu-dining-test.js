@@ -103,6 +103,8 @@ const LocationStatus = {
     xmlError: "* XML Error *",
     menuError: "* Menu Error *",
     siteError: "* Site Error *",
+    xmlExcess: "* XML Excess *",
+    siteExcess: "* Site Excess *",
     otherError: "* Other Error *"
 }
 
@@ -488,8 +490,7 @@ function validateLocation(jsonIndex = 0) {
             if (jsonIndex < locationsJson.length - 1) {
                 validateLocation(jsonIndex + 1);
             } else {
-                console.log(`${logStyle.fg.white}------All tests completed------${logStyle.reset}`);
-                passedLocationsReport(true);
+                checkForXmlExcess();
             }
         }, 50);
     }
@@ -609,6 +610,66 @@ function checkSite(location) {
         setLocationStatus(location, LocationStatus.siteError);
     }
     return match;
+}
+
+/**
+ * Checks if any locations in locationsXml do not exist in locationsJson
+ *
+ * @see locationsJson
+ * @see locationsXml
+ * @return {void}
+ */
+function checkForXmlExcess() {
+    console.log(`${logStyle.fg.white}------Checking for excesses in XML------${logStyle.reset}`);
+    let excessAmt = 0
+    for (const location of locationsXml.map(loc => loc.name)) {
+        if (typeof locationResults[location] === "undefined") {
+            excessAmt += 1;
+            setLocationStatus(location, LocationStatus.xmlExcess);
+            logAndPush(`${logStyle.fg.red}Excess location "${location}" found in "locations.xml"${logStyle.reset}`, "e");
+        }
+    }
+
+    if (!excessAmt) {
+        console.log(`${logStyle.fg.green}No excess locations found in "locations.xml"${logStyle.reset}`);
+    } else {
+        console.log(`${excessAmt} excess location${excessAmt === 1 ? "" : "s"} found in "locations.xml"`);
+    }
+
+    setTimeout(() => {
+        console.log("");
+        checkForSiteExcess();
+    }, 50);
+}
+
+/**
+ * Checks if any locations in siteLocations do not exist in locationsJson
+ *
+ * @see locationsJson
+ * @see siteLocations
+ * @return {void}
+ */
+function checkForSiteExcess() {
+    console.log(`${logStyle.fg.white}------Checking for excesses on ${useDevSite ? "dev" : "production"} site------${logStyle.reset}`);
+    let excessAmt = 0
+    for (const location of siteLocations) {
+        if (typeof locationResults[location] === "undefined") {
+            excessAmt += 1;
+            setLocationStatus(location, LocationStatus.siteExcess);
+            logAndPush(`${logStyle.fg.red}Excess location "${location}" found on ${useDevSite ? "dev" : "production"} site${logStyle.reset}`, "e");
+        }
+    }
+
+    if (!excessAmt) {
+        console.log(`${logStyle.fg.green}No excess locations found on ${useDevSite ? "dev" : "production"} site${logStyle.reset}`);
+    } else {
+        console.log(`${excessAmt} excess location${excessAmt === 1 ? "" : "s"} found on ${useDevSite ? "dev" : "production"} site`);
+    }
+
+    setTimeout(() => {
+        console.log(`\n${logStyle.fg.white}------All tests completed------${logStyle.reset}`);
+        passedLocationsReport(true);
+    }, 50);
 }
 
 /**
