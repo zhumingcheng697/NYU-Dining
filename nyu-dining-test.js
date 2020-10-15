@@ -752,7 +752,7 @@ function noMenuLocationsReport(showNextStep = false) {
     if (fatalErrorOccurred) {
         console.warn(`${logStyle.fg.red}A fatal error has occurred during the test${logStyle.reset}`);
     } else if (noMenuLocations.length > 0) {
-        console.log(`${logStyle.fg.red}The following ${noMenuLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noMenuLocations.length === 1 ? "has" : "have"} a match in "locations.xml" but had issue accessing menu${noMenuLocations.length === 1 ? "" : "s"}:${logStyle.reset}\n${noMenuLocations.join(showNextStep ? ", " : "\n")}`);
+        console.log(`${logStyle.fg.red}The following ${noMenuLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noMenuLocations.length === 1 ? "has" : "have"} issue accessing menu${noMenuLocations.length === 1 ? "" : "s"}:${logStyle.reset}\n${noMenuLocations.join(showNextStep ? ", " : "\n")}`);
     } else {
         if (!showNextStep) {
             console.log(`${logStyle.fg.green}No locations in "locations.json" failed the menu test${logStyle.reset}`);
@@ -1069,7 +1069,7 @@ function typeKeyPrompt() {
     console.log(`${logStyle.fg.yellow}Type "L" to see the log of all error messages thrown in the last run${currentConfig.sendEmailAfterShowingErrors === -1 ? "" : ` and${currentConfig.sendEmailAfterShowingErrors === 1 && validateEmail(currentConfig.rememberedEmail) ? " " : " optionally "}email yourself a copy of it`}${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "P" to see the locations that passed all tests${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "X" to see the locations that failed the XML test (do not have a match in XML)${logStyle.reset}`);
-    console.log(`${logStyle.fg.yellow}Type "M" to see the locations that failed the menu test (had issue accessing menus)${logStyle.reset}`);
+    console.log(`${logStyle.fg.yellow}Type "M" to see the locations that failed the menu test (have issue accessing menus)${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "S" to see the locations that failed the site test (do not have a match on the ${useDevSite ? "dev" : "production"} site)${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "T" to see a table of all locations with their names and test results${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "R" to rerun the tests on all locations again${logStyle.reset}`);
