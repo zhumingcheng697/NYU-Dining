@@ -12,6 +12,15 @@ const prodSiteUrl = "https://mobile.nyu.edu/default/dining_nyu_eats_locations_an
 const devSiteUrl = "https://nyu-test.modolabs.net/default/chartwells_dining/index";
 
 /**
+ * Whether to check for locations on prodSiteUrl or devSiteUrl.
+ *
+ * @see prodSiteUrl
+ * @see devSiteUrl
+ * @type {boolean}
+ */
+const useDevSite = !!process.env.DEV_SITE || true;
+
+/**
  * Makes the console logs colorful.
  *
  * @link https://stackoverflow.com/a/40560590
@@ -93,6 +102,7 @@ const LocationStatus = {
     passed: "PASSED",
     xmlError: "* XML Error *",
     menuError: "* Menu Error *",
+    siteError: "* Site Error *",
     otherError: "* Other Error *"
 }
 
@@ -165,20 +175,14 @@ let locationsJson = [];
 let locationsXml = [];
 
 /**
- * An array of name of locations parsed from prodSiteUrl
+ * An array of name of locations parsed from prodSiteUrl or devSiteUrl, depending on useDevSite
  *
  * @see prodSiteUrl
- * @type {[string]}
- */
-let prodSiteLocations = [];
-
-/**
- * An array of name of locations parsed from devSiteUrl
- *
  * @see devSiteUrl
+ * @see useDevSite
  * @type {[string]}
  */
-let devSiteLocations = [];
+let siteLocations = [];
 
 /**
  * Key-value pairs showing the testing results of each location
@@ -389,11 +393,9 @@ function fetchLocationsXml() {
 
 
 
-                            fetchLocationsFromSite(true, () => {
-                                // fetchLocationsFromSite(false, () => {
-                                    console.log("");
-                                    validateLocation();
-                                // });
+                            fetchLocationsFromSite(() => {
+                                console.log("");
+                                validateLocation();
                             });
 
 
@@ -424,43 +426,38 @@ function fetchLocationsXml() {
  *
  * @see prodSiteUrl
  * @see devSiteUrl
- * @param dev {boolean} Whether to load from devSiteUrl
  * @param handler {function} Runs after locations are successfully parsed
  * @return {void}
  */
-function fetchLocationsFromSite(dev, handler = () => {}) {
-    console.log(`${logStyle.fg.white}------Loading ${dev ? "dev" : "production"} site------${logStyle.reset}`);
-    nodeFetch(dev ? devSiteUrl : prodSiteUrl)
+function fetchLocationsFromSite(handler = () => {}) {
+    console.log(`${logStyle.fg.white}------Loading ${useDevSite ? "dev" : "production"} site------${logStyle.reset}`);
+    nodeFetch(useDevSite ? devSiteUrl : prodSiteUrl)
         .then(res => {
             const statusPrefix = Math.floor(res.status / 100);
             console.log(`${statusPrefix === 2 ? logStyle.fg.green : ([4, 5].includes(statusPrefix) ? logStyle.fg.red : "")}${res.status} ${res.statusText}${logStyle.reset}`);
-            console.log(`${logStyle.fg.green}${dev ? "Dev" : "Production"} site load succeeded${logStyle.reset}`);
+            console.log(`${logStyle.fg.green}${useDevSite ? "Dev" : "Production"} site load succeeded${logStyle.reset}`);
             return res.text();
         }).then(text => {
             const site = HTMLParser.parse(`${text}`);
             if (site.valid) {
-                console.log(`${logStyle.fg.green}${dev ? "Dev" : "Production"} site parse succeeded${logStyle.reset}`);
+                console.log(`${logStyle.fg.green}${useDevSite ? "Dev" : "Production"} site parse succeeded${logStyle.reset}`);
                 const locationNames = site.querySelectorAll(`#kgoui_Rcontent_I1_Rcontent_I1_Ritems li a div.kgoui_list_item_textblock span`).map(e => he.decode(e.childNodes[0].rawText));
 
                 if (locationNames.length > 0) {
-                    if (dev) {
-                        devSiteLocations = locationNames;
-                    } else {
-                        prodSiteLocations = locationNames;
-                    }
+                    siteLocations = locationNames;
 
-                    console.log(`${logStyle.fg.green}${locationNames.length} location${locationsXml.length === 1 ? "" : "s"} found on ${dev ? "dev" : "production"} site${logStyle.reset}`);
+                    console.log(`${logStyle.fg.green}${locationNames.length} location${locationsXml.length === 1 ? "" : "s"} found on ${useDevSite ? "dev" : "production"} site${logStyle.reset}`);
                     handler();
                 } else {
-                    logAndPush(`${logStyle.fg.red}Fatal Error: No locations found on ${dev ? "dev" : "production"} site${logStyle.reset}`, "e");
+                    logAndPush(`${logStyle.fg.red}Fatal Error: No locations found on ${useDevSite ? "dev" : "production"} site${logStyle.reset}`, "e");
                     terminateTest();
                 }
             } else {
-                logAndPush(`${logStyle.fg.red}Fatal Error: ${dev ? "dev" : "production"} site parse failed${logStyle.reset}`, "e");
+                logAndPush(`${logStyle.fg.red}Fatal Error: ${useDevSite ? "dev" : "production"} site parse failed${logStyle.reset}`, "e");
                 terminateTest();
             }
         }).catch(() => {
-            logAndPush(`${logStyle.fg.red}Fatal Error: ${dev ? "dev" : "production"} site load failed${logStyle.reset}`, "e");
+            logAndPush(`${logStyle.fg.red}Fatal Error: ${useDevSite ? "dev" : "production"} site load failed${logStyle.reset}`, "e");
             terminateTest();
         });
 }
@@ -528,11 +525,13 @@ function validateLocation(jsonIndex = 0) {
                     }
                 } else {
                     setLocationStatus(loc.name, LocationStatus.xmlError);
+                    checkSite(loc.name);
                     validateNext();
                 }
             } catch (e) {
                 logAndPush(`${logStyle.fg.red}Something went wrong when trying to access "${loc.name}" in "locations.xml"${logStyle.reset}`, "e");
                 setLocationStatus(loc.name, LocationStatus.xmlError);
+                checkSite(loc.name);
                 validateNext();
             }
         }, 50);
@@ -547,10 +546,10 @@ function validateLocation(jsonIndex = 0) {
  *
  * @param url {string} URL of menu JSON file to fetch, parse, and validate
  * @param location {string} Name of the location to fetch menu for
- * @param completion {function} Completion handler
+ * @param handler {function} Runs after test finishes
  * @return {void}
  */
-function fetchMenu(url, location, completion = () => {}) {
+function fetchMenu(url, location, handler = () => {}) {
     nodeFetch(url)
         .then(res => {
             console.log(`${logStyle.fg.green}Menu load succeeded ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`);
@@ -564,24 +563,46 @@ function fetchMenu(url, location, completion = () => {}) {
                 if (menu.menus === -1) {
                     logAndPush(`${logStyle.fg.red}Field "menus" does not exist ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`, "e");
                     setLocationStatus(location, LocationStatus.menuError);
+                    checkSite(location);
                 } else if (menu.menus === 0) {
                     logAndPush(`${logStyle.fg.red}No menus found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`, "e");
                     setLocationStatus(location, LocationStatus.menuError);
+                    checkSite(location);
                 } else {
                     console.log(`${logStyle.fg.green}${menu.menus} menu${menu.menus === 1 ? "" : "s"} found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`);
-                    setLocationStatus(location, LocationStatus.passed);
+                    if (checkSite(location)) {
+                        setLocationStatus(location, LocationStatus.passed);
+                    }
                 }
-                completion();
+                handler();
             } catch (e) {
                 logAndPush(`${logStyle.fg.red}Menu parse failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`, "e");
                 setLocationStatus(location, LocationStatus.menuError);
-                completion();
+                checkSite(location);
+                handler();
             }
         }).catch(() => {
             logAndPush(`${logStyle.fg.red}Menu load failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`, "e");
             setLocationStatus(location, LocationStatus.menuError);
-            completion();
+            checkSite(location);
+            handler();
         });
+}
+
+/**
+ * Checks if the location is in siteLocations.
+ *
+ * @see siteLocations
+ * @param location {string} Location to check
+ * @return {boolean} Whether the location is in siteLocations
+ */
+function checkSite(location) {
+    const match = siteLocations.includes(location);
+    logAndPush(`${match ? logStyle.fg.green : logStyle.fg.red}"${location}" is${match ? " " : " not "}found on ${useDevSite ? "dev" : "production"} site${logStyle.reset}`, match ? "" : "e");
+    if (!match) {
+        setLocationStatus(location, LocationStatus.siteError);
+    }
+    return match;
 }
 
 /**
@@ -702,7 +723,7 @@ function locationsTableReport() {
     console.table(locationsJson.map(loc => {
         return {
             location: loc.name,
-            result: (locationResults[loc.name] ? locationResults[loc.name].join("\n") : LocationStatus.otherError)
+            result: (locationResults[loc.name] ? locationResults[loc.name].join(" | ") : LocationStatus.otherError)
         };
     }));
 }
@@ -985,8 +1006,7 @@ function rerunTest() {
     currentRunMode = RunMode.standard;
     locationsJson = [];
     locationsXml = [];
-    prodSiteLocations = [];
-    devSiteLocations = [];
+    siteLocations = [];
     locationResults = {};
     allErrorMsg = [];
     allTestsCompleted = false;
