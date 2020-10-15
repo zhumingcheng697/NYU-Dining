@@ -618,17 +618,19 @@ function locationsWithStatus(locationStatus) {
 }
 
 /**
- * Logs names of locations in locationsJson that have passed all tests (validateLocation and fetchMenu)
+ * Logs names of locations in locationsJson that have passed all tests (validateLocation, fetchMenu, and checkSite)
  *
- * @param showNextStep {boolean} Whether to show noMenuLocationsReport automatically, default to false
- * @see noMenuLocationsReport
+ * @param showNextStep {boolean} Whether to show noXmlMatchLocationsReport automatically, default to false
+ * @see noXmlMatchLocationsReport
  * @see validateLocation
  * @see fetchMenu
+ * @see checkSite
  * @see locationsJson
  * @return {void}
  */
 function passedLocationsReport(showNextStep = false) {
     const passedLocations = locationsWithStatus(LocationStatus.passed);
+
     if (fatalErrorOccurred) {
         console.warn(`${logStyle.fg.red}A fatal error has occurred during the test${logStyle.reset}`);
     } else if (passedLocations.length > 0) {
@@ -640,6 +642,39 @@ function passedLocationsReport(showNextStep = false) {
     if (showNextStep) {
         console.log("");
         setTimeout(() => {
+            noXmlMatchLocationsReport(showNextStep);
+        }, 50);
+    }
+}
+
+/**
+ * Logs names of locations in locationsJson that have failed validateLocation
+ *
+ * @see showNextStep {boolean} Whether to show noMenuLocationsReport automatically, default to false
+ * @see noMenuLocationsReport
+ * @see validateLocation
+ * @see locationsJson
+ * @return {void}
+ */
+function noXmlMatchLocationsReport(showNextStep = false) {
+    const noXmlMatchLocations = locationsWithStatus(LocationStatus.xmlError);
+
+    if (fatalErrorOccurred) {
+        console.warn(`${logStyle.fg.red}A fatal error has occurred during the test${logStyle.reset}`);
+    } else if (noXmlMatchLocations.length > 0) {
+        console.log(`${logStyle.fg.red}The following ${noXmlMatchLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noXmlMatchLocations.length === 1 ? "does" : "do"} not have a match in "locations.xml":${logStyle.reset}\n${noXmlMatchLocations.join(showNextStep ? ", " : "\n")}`);
+    } else {
+        if (!showNextStep) {
+            console.log(`${logStyle.fg.green}No locations in "locations.json" failed the XML test${logStyle.reset}`);
+        }
+    }
+
+    if (showNextStep) {
+        setTimeout(() => {
+            if (noXmlMatchLocations.length > 0) {
+                console.log("");
+            }
+
             noMenuLocationsReport(showNextStep);
         }, 50);
     }
@@ -648,8 +683,8 @@ function passedLocationsReport(showNextStep = false) {
 /**
  * Logs name of locations in locationsJson that have passed validateLocation but failed fetchMenu
  *
- * @param showNextStep {boolean} Whether to show noXmlMatchLocationsReport automatically, default to false
- * @see noXmlMatchLocationsReport
+ * @param showNextStep {boolean} Whether to show noSiteMatchLocationsReport automatically, default to false
+ * @see noSiteMatchLocationsReport
  * @see validateLocation
  * @see fetchMenu
  * @see locationsJson
@@ -674,34 +709,34 @@ function noMenuLocationsReport(showNextStep = false) {
                 console.log("");
             }
 
-            noXmlMatchLocationsReport(showNextStep);
+            noSiteMatchLocationsReport(showNextStep);
         }, 50);
     }
 }
 
 /**
- * Logs names of locations in locationsJson that have failed validateLocation
+ * Logs names of locations in locationsJson that have failed checkSite
  *
  * @param showNextStep {boolean} Whether to show the keyboard input prompt automatically, default to false
- * @see validateLocation
+ * @see checkSite
  * @see locationsJson
  * @return {void}
  */
-function noXmlMatchLocationsReport(showNextStep = false) {
-    const noXmlMatchLocations = locationsWithStatus(LocationStatus.xmlError);
+function noSiteMatchLocationsReport(showNextStep = false) {
+    const noSiteMatchLocations = locationsWithStatus(LocationStatus.siteError);
 
     if (fatalErrorOccurred) {
         console.warn(`${logStyle.fg.red}A fatal error has occurred during the test${logStyle.reset}`);
-    } else if (noXmlMatchLocations.length > 0) {
-        console.log(`${logStyle.fg.red}The following ${noXmlMatchLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noXmlMatchLocations.length === 1 ? "does" : "do"} not have a match in "locations.xml":${logStyle.reset}\n${noXmlMatchLocations.join(showNextStep ? ", " : "\n")}`);
+    } else if (noSiteMatchLocations.length > 0) {
+        console.log(`${logStyle.fg.red}The following ${noSiteMatchLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noSiteMatchLocations.length === 1 ? "does" : "do"} not have a match on the ${useDevSite ? "dev" : "production"} site:${logStyle.reset}\n${noSiteMatchLocations.join(showNextStep ? ", " : "\n")}`);
     } else {
         if (!showNextStep) {
-            console.log(`${logStyle.fg.green}No locations in "locations.json" failed the XML test${logStyle.reset}`);
+            console.log(`${logStyle.fg.green}No locations in "locations.json" failed the site test${logStyle.reset}`);
         }
     }
 
     if (showNextStep) {
-        autoSendEmailOrShowPrompt(noXmlMatchLocations.length > 0);
+        autoSendEmailOrShowPrompt(noSiteMatchLocations.length > 0);
     }
 }
 
@@ -975,10 +1010,11 @@ function logAndPush(msg, logMethod = "log") {
  * @return {void}
  */
 function typeKeyPrompt() {
-    console.log(`${logStyle.fg.yellow}Type "E" to see all error messages thrown in the last run${currentConfig.sendEmailAfterShowingErrors === -1 ? "" : ` and${currentConfig.sendEmailAfterShowingErrors === 1 && validateEmail(currentConfig.rememberedEmail) ? " " : " optionally "}email yourself a copy of it`}${logStyle.reset}`);
-    console.log(`${logStyle.fg.yellow}Type "P" to see a list of the locations that passed all tests${logStyle.reset}`);
-    console.log(`${logStyle.fg.yellow}Type "M" to see a list of the locations that failed the menu test (had issue accessing menus)${logStyle.reset}`);
-    console.log(`${logStyle.fg.yellow}Type "X" to see a list of the locations that failed the XML test (does not have a match in XML)${logStyle.reset}`);
+    console.log(`${logStyle.fg.yellow}Type "L" to see the log of all error messages thrown in the last run${currentConfig.sendEmailAfterShowingErrors === -1 ? "" : ` and${currentConfig.sendEmailAfterShowingErrors === 1 && validateEmail(currentConfig.rememberedEmail) ? " " : " optionally "}email yourself a copy of it`}${logStyle.reset}`);
+    console.log(`${logStyle.fg.yellow}Type "P" to see the locations that passed all tests${logStyle.reset}`);
+    console.log(`${logStyle.fg.yellow}Type "X" to see the locations that failed the XML test (do not have a match in XML)${logStyle.reset}`);
+    console.log(`${logStyle.fg.yellow}Type "M" to see the locations that failed the menu test (had issue accessing menus)${logStyle.reset}`);
+    console.log(`${logStyle.fg.yellow}Type "S" to see the locations that failed the site test (do not have a match on the ${useDevSite ? "dev" : "production"} site)${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "T" to see a table of all locations with their names and test results${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "R" to rerun the tests on all locations again${logStyle.reset}`);
 }
@@ -1142,17 +1178,20 @@ function autoSendEmailOrShowPrompt(logBlankLine) {
         switch (currentRunMode) {
             case RunMode.standard:
                 switch (line.toUpperCase()) {
-                    case "E":
+                    case "L":
                         errorMsgReport();
                         return;
                     case "P":
                         passedLocationsReport();
                         break;
+                    case "X":
+                        noXmlMatchLocationsReport();
+                        break;
                     case "M":
                         noMenuLocationsReport();
                         break;
-                    case "X":
-                        noXmlMatchLocationsReport();
+                    case "S":
+                        noSiteMatchLocationsReport();
                         break;
                     case "T":
                         locationsTableReport();
@@ -1162,7 +1201,7 @@ function autoSendEmailOrShowPrompt(logBlankLine) {
                         console.warn(`${logStyle.fg.red}Will rerun all tests. Continue? (y/n)${logStyle.reset}`)
                         return;
                     default:
-                        console.error(`${logStyle.fg.red}Please type in a valid key. (E/P/M/X/T/R)${logStyle.reset}`);
+                        console.error(`${logStyle.fg.red}Please type in a valid key. (L/P/X/M/S/T/R)${logStyle.reset}`);
                         return;
                 }
 
