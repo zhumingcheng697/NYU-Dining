@@ -105,3 +105,19 @@
 - Improved type safety and code readability
 
 - Streamlined testing for production and dev sites
+
+### Wednesday: October 14, 2020 (3 hours)
+
+- Reverted `master` branch, released `1.0.0` version, and working on `sites-testing` branch from now on
+
+- Reworked email-verifying regex
+
+- Updated documentation to reflect type of dictionary- or enum-style `Object`s
+
+- Improved time efficiency when displaying table of locations and statuses and reworked memory structures
+
+- Streamlined experience if fatal errors occurred
+
+- Added ability to test if location is on the production or dev site
+
+- Added support for locations with multiple statuses (eg. `* Menu Error *` and `* Site Error *`)
