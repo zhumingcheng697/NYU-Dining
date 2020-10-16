@@ -690,7 +690,7 @@ function passedLocationsReport(showNextStep = false) {
     if (fatalErrorOccurred) {
         console.warn(`${logStyle.fg.red}A fatal error has occurred during the test${logStyle.reset}`);
     } else if (passedLocations.length > 0) {
-        console.log(`${logStyle.fg.green}The following ${passedLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" passed all tests successfully:${logStyle.reset}\n${passedLocations.join(showNextStep ? ", " : "\n")}`);
+        console.log(`${logStyle.fg.green}The following ${passedLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" passed all tests successfully (${LocationStatus.passed}):${logStyle.reset}\n${passedLocations.join(showNextStep ? ", " : "\n")}`);
     } else {
         console.warn(`${logStyle.fg.red}No locations in "locations.json" passed all tests${logStyle.reset}`);
     }
@@ -718,7 +718,7 @@ function noXmlMatchLocationsReport(showNextStep = false) {
     if (fatalErrorOccurred) {
         console.warn(`${logStyle.fg.red}A fatal error has occurred during the test${logStyle.reset}`);
     } else if (noXmlMatchLocations.length > 0) {
-        console.log(`${logStyle.fg.red}The following ${noXmlMatchLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noXmlMatchLocations.length === 1 ? "does" : "do"} not have a match in "locations.xml":${logStyle.reset}\n${noXmlMatchLocations.join(showNextStep ? ", " : "\n")}`);
+        console.log(`${logStyle.fg.red}The following ${noXmlMatchLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noXmlMatchLocations.length === 1 ? "does" : "do"} not have a match in "locations.xml" (${LocationStatus.xmlError}):${logStyle.reset}\n${noXmlMatchLocations.join(showNextStep ? ", " : "\n")}`);
     } else {
         if (!showNextStep) {
             console.log(`${logStyle.fg.green}No locations in "locations.json" failed the XML test${logStyle.reset}`);
@@ -752,7 +752,7 @@ function noMenuLocationsReport(showNextStep = false) {
     if (fatalErrorOccurred) {
         console.warn(`${logStyle.fg.red}A fatal error has occurred during the test${logStyle.reset}`);
     } else if (noMenuLocations.length > 0) {
-        console.log(`${logStyle.fg.red}The following ${noMenuLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noMenuLocations.length === 1 ? "has" : "have"} issue accessing menu${noMenuLocations.length === 1 ? "" : "s"}:${logStyle.reset}\n${noMenuLocations.join(showNextStep ? ", " : "\n")}`);
+        console.log(`${logStyle.fg.red}The following ${noMenuLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noMenuLocations.length === 1 ? "has" : "have"} issue accessing menu${noMenuLocations.length === 1 ? "" : "s"} (${LocationStatus.menuError}):${logStyle.reset}\n${noMenuLocations.join(showNextStep ? ", " : "\n")}`);
     } else {
         if (!showNextStep) {
             console.log(`${logStyle.fg.green}No locations in "locations.json" failed the menu test${logStyle.reset}`);
@@ -773,7 +773,8 @@ function noMenuLocationsReport(showNextStep = false) {
 /**
  * Logs names of locations in locationsJson that have failed checkSite
  *
- * @param showNextStep {boolean} Whether to show the keyboard input prompt automatically, default to false
+ * @param showNextStep {boolean} Whether to show excessLocationsReport automatically, default to false
+ * @see excessLocationsReport
  * @see checkSite
  * @see locationsJson
  * @return {void}
@@ -784,7 +785,7 @@ function noSiteMatchLocationsReport(showNextStep = false) {
     if (fatalErrorOccurred) {
         console.warn(`${logStyle.fg.red}A fatal error has occurred during the test${logStyle.reset}`);
     } else if (noSiteMatchLocations.length > 0) {
-        console.log(`${logStyle.fg.red}The following ${noSiteMatchLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noSiteMatchLocations.length === 1 ? "does" : "do"} not have a match on the ${useDevSite ? "dev" : "production"} site:${logStyle.reset}\n${noSiteMatchLocations.join(showNextStep ? ", " : "\n")}`);
+        console.log(`${logStyle.fg.red}The following ${noSiteMatchLocations.length} of ${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} in "locations.json" ${noSiteMatchLocations.length === 1 ? "does" : "do"} not have a match on the ${useDevSite ? "dev" : "production"} site (${LocationStatus.siteError}):${logStyle.reset}\n${noSiteMatchLocations.join(showNextStep ? ", " : "\n")}`);
     } else {
         if (!showNextStep) {
             console.log(`${logStyle.fg.green}No locations in "locations.json" failed the site test${logStyle.reset}`);
@@ -792,8 +793,65 @@ function noSiteMatchLocationsReport(showNextStep = false) {
     }
 
     if (showNextStep) {
-        autoSendEmailOrShowPrompt(noSiteMatchLocations.length > 0);
+        setTimeout(() => {
+            if (noSiteMatchLocations.length > 0) {
+                console.log("");
+            }
+
+            excessLocationsReport(showNextStep);
+        }, 50);
     }
+}
+
+/**
+ * Logs names of locations in locationsXml that have failed checkForXmlExcess and locations in siteLocations that have failed checkForSiteExcess.
+ *
+ * @param showNextStep {boolean} Whether to show the keyboard input prompt automatically, default to false
+ * @see locationsXml
+ * @see checkForXmlExcess
+ * @see siteLocations
+ * @see checkForSiteExcess
+ * @return {void}
+ */
+function excessLocationsReport(showNextStep = false) {
+    function xmlExcessReport() {
+        const xmlExcessLocations = locationsWithStatus(LocationStatus.xmlExcess);
+
+        if (fatalErrorOccurred) {
+            console.warn(`${logStyle.fg.red}A fatal error has occurred during the test${logStyle.reset}`);
+            return;
+        } else if (xmlExcessLocations.length > 0) {
+            console.log(`${logStyle.fg.red}The following ${xmlExcessLocations.length} location${xmlExcessLocations.length === 1 ? "" : "s"} in "locations.xml" ${xmlExcessLocations.length === 1 ? "does" : "do"} not have a match in "locations.json" (${LocationStatus.xmlExcess}):${logStyle.reset}\n${xmlExcessLocations.join(showNextStep ? ", " : "\n")}`);
+        }
+
+        setTimeout(() => {
+            if (xmlExcessLocations.length > 0) {
+                console.log("");
+            }
+
+            siteExcessReport(xmlExcessLocations.length > 0);
+        }, 50);
+    }
+
+    function siteExcessReport(xmlExcessExist) {
+        const siteExcessLocations = locationsWithStatus(LocationStatus.siteExcess);
+
+        if (fatalErrorOccurred) {
+            console.warn(`${logStyle.fg.red}A fatal error has occurred during the test${logStyle.reset}`);
+        } else if (siteExcessLocations.length > 0) {
+            console.log(`${logStyle.fg.red}The following ${siteExcessLocations.length} location${siteExcessLocations.length === 1 ? "" : "s"} on the ${useDevSite ? "dev" : "production"} site ${siteExcessLocations.length === 1 ? "does" : "do"} not have a match in "locations.json" (${LocationStatus.siteExcess}):${logStyle.reset}\n${siteExcessLocations.join(showNextStep ? ", " : "\n")}`);
+        } else {
+            if (!showNextStep && !xmlExcessExist) {
+                console.log(`${logStyle.fg.green}No locations in "locations.xml" or on the ${useDevSite ? "dev" : "production"} site failed the excess test${logStyle.reset}`);
+            }
+        }
+
+        if (showNextStep) {
+            autoSendEmailOrShowPrompt(siteExcessLocations.length > 0);
+        }
+    }
+
+    xmlExcessReport();
 }
 
 /**
@@ -1071,6 +1129,7 @@ function typeKeyPrompt() {
     console.log(`${logStyle.fg.yellow}Type "X" to see the locations that failed the XML test (do not have a match in XML)${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "M" to see the locations that failed the menu test (have issue accessing menus)${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "S" to see the locations that failed the site test (do not have a match on the ${useDevSite ? "dev" : "production"} site)${logStyle.reset}`);
+    console.log(`${logStyle.fg.yellow}Type "E" to see the locations that failed the excess test (do not have a match in "locations.json")${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "T" to see a table of all locations with their names and test results${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "R" to rerun the tests on all locations again${logStyle.reset}`);
 }
@@ -1248,6 +1307,9 @@ function autoSendEmailOrShowPrompt(logBlankLine) {
                         break;
                     case "S":
                         noSiteMatchLocationsReport();
+                        break;
+                    case "E":
+                        excessLocationsReport();
                         break;
                     case "T":
                         locationsTableReport();
