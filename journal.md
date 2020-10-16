@@ -121,3 +121,15 @@
 - Added ability to test if location is on the production or dev site
 
 - Added support for locations with multiple statuses (eg. `* Menu Error *` and `* Site Error *`)
+
+### Thursday: October 15, 2020 (5 hours)
+
+- Improve CLI prompt experience
+
+- Improved error logging functionalities
+
+- Added support for checking and logging excess locations in XML and on sites
+
+- Added support for logging location status definitions
+
+- Updated `README.md`
