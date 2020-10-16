@@ -70,7 +70,7 @@ const rl = readline.createInterface({
 });
 
 /**
- * Configures nodemailer to be able to send emails
+ * Configures nodemailer to be able to send emails.
  *
  * @link https://ourcodeworld.com/articles/read/264/how-to-send-an-email-gmail-outlook-and-zoho-using-nodemailer-in-node-js
  */
@@ -126,7 +126,7 @@ const RunMode = {
 };
 
 /**
- * User’s remember-email configuration
+ * User’s remember-email configuration.
  *
  * @type {{devMode: boolean, autoRunIntervalInMinute: number, autoSendEmailAfterRun: number, sendEmailAfterShowingErrors: number, rememberEmail: number, rememberedEmail: string}}
  */
@@ -147,21 +147,21 @@ let currentConfig = {
 let currentRunMode = RunMode.configuring;
 
 /**
- * Timeout id for auto rerun
+ * Timeout id for auto rerun.
  *
  * @type {number}
  */
 let autoRerunId;
 
 /**
- * The email address the user types in
+ * The email address the user types in.
  *
  * @type {string}
  */
 let typedInEmail = "";
 
 /**
- * Object representation of locations parsed from locationsJsonUrl
+ * Object representation of locations parsed from locationsJsonUrl.
  *
  * @see locationsJsonUrl
  * @type {[Object]}
@@ -169,7 +169,7 @@ let typedInEmail = "";
 let locationsJson = [];
 
 /**
- * Object representation of locations parsed from locationsXmlUrl
+ * Object representation of locations parsed from locationsXmlUrl.
  *
  * @see locationsXml
  * @type {[Object]}
@@ -177,7 +177,7 @@ let locationsJson = [];
 let locationsXml = [];
 
 /**
- * An array of name of locations parsed from prodSiteUrl or devSiteUrl, depending on useDevSite
+ * An array of name of locations parsed from prodSiteUrl or devSiteUrl, depending on useDevSite.
  *
  * @see prodSiteUrl
  * @see devSiteUrl
@@ -187,14 +187,14 @@ let locationsXml = [];
 let siteLocations = [];
 
 /**
- * Key-value pairs showing the testing results of each location
+ * Key-value pairs showing the testing results of each location.
  *
  * @type {Object.<string, [string]>}
  */
 let locationResults = {};
 
 /**
- * An array of thrown error messages in validateLocation and fetchMenu
+ * An array of thrown error messages in validateLocation and fetchMenu.
  *
  * @see validateLocation
  * @see fetchMenu
@@ -203,21 +203,21 @@ let locationResults = {};
 let allErrorMsg = [];
 
 /**
- * Determines if all test runs are finished
+ * Determines if all test runs are finished.
  *
  * @type {boolean}
  */
 let allTestsCompleted = false;
 
 /**
- * Determines if an fatal error has occurred
+ * Determines if an fatal error has occurred.
  *
  * @type {boolean}
  */
 let fatalErrorOccurred = false;
 
 /**
- * Tries to load currentConfig from local, or else initialize one with the default values
+ * Tries to load currentConfig from local, or else initialize one with the default values.
  *
  * @param handler {function} Runs after currentConfig load either succeeded or failed
  * @see currentConfig
@@ -268,7 +268,7 @@ function loadOrInitConfig(handler = () => {}) {
 }
 
 /**
- * Tries to save currentConfig to local
+ * Tries to save currentConfig to local.
  *
  * @param handler {function} Runs after currentConfig save either succeeded or failed
  * @see currentConfig
@@ -308,7 +308,7 @@ function setLocationStatus(location, status) {
 }
 
 /**
- * Fetches, parses, and validates location data from locationsJsonUrl and stores the data in locationsJson
+ * Fetches, parses, and validates location data from locationsJsonUrl and stores the data in locationsJson.
  *
  * @see locationsJsonUrl
  * @see locationsJson
@@ -349,7 +349,7 @@ function fetchLocationsJson() {
 }
 
 /**
- * Fetches, parses, and validates location data from locationsXmlUrl and stores the data in locationsXml
+ * Fetches, parses, and validates location data from locationsXmlUrl and stores the data in locationsXml.
  *
  * @see locationsXmlUrl
  * @see locationsXml
@@ -418,7 +418,7 @@ function fetchLocationsXml() {
 }
 
 /**
- * Fetches, and parses location data from prodSiteUrl or devSiteUrl
+ * Fetches, and parses location data from prodSiteUrl or devSiteUrl.
  *
  * @see prodSiteUrl
  * @see devSiteUrl
@@ -457,7 +457,7 @@ function fetchLocationsFromSite() {
 }
 
 /**
- * Validates location data in locationsJson and locationsXml
+ * Validates location data in locationsJson and locationsXml.
  *
  * @param jsonIndex {number} Index of location to validate in locationsJson
  * @see locationsJson
@@ -466,7 +466,7 @@ function fetchLocationsFromSite() {
  */
 function validateLocation(jsonIndex = 0) {
     /**
-     * Runs validateLocation on the next location in locationsJson, if there is one, or console log the testing report
+     * Runs validateLocation on the next location in locationsJson, if there is one, or console log the testing report.
      *
      * @see validateLocation
      * @see locationsJson
@@ -538,7 +538,7 @@ function validateLocation(jsonIndex = 0) {
 }
 
 /**
- * Fetches, parses, and validates menu data from the given URL for a location
+ * Fetches, parses, and validates menu data from the given URL for a location.
  *
  * @param url {string} URL of menu JSON file to fetch, parse, and validate
  * @param location {string} Name of the location to fetch menu for
@@ -602,7 +602,7 @@ function checkSite(location) {
 }
 
 /**
- * Checks if any locations in locationsXml do not exist in locationsJson
+ * Checks if any locations in locationsXml do not exist in locationsJson.
  *
  * @see locationsJson
  * @see locationsXml
@@ -632,7 +632,7 @@ function checkForXmlExcess() {
 }
 
 /**
- * Checks if any locations in siteLocations do not exist in locationsJson
+ * Checks if any locations in siteLocations do not exist in locationsJson.
  *
  * @see locationsJson
  * @see siteLocations
@@ -662,7 +662,7 @@ function checkForSiteExcess() {
 }
 
 /**
- * Returns the name of locations in locationResults with the status locationStatus
+ * Returns the name of locations in locationResults with the status locationStatus.
  *
  * @see LocationStatus
  * @see locationResults
@@ -674,7 +674,7 @@ function locationsWithStatus(locationStatus) {
 }
 
 /**
- * Logs names of locations in locationsJson that have passed all tests (validateLocation, fetchMenu, and checkSite)
+ * Logs names of locations in locationsJson that have passed all tests (validateLocation, fetchMenu, and checkSite).
  *
  * @param showNextStep {boolean} Whether to show noXmlMatchLocationsReport automatically, default to false
  * @see noXmlMatchLocationsReport
@@ -704,7 +704,7 @@ function passedLocationsReport(showNextStep = false) {
 }
 
 /**
- * Logs names of locations in locationsJson that have failed validateLocation
+ * Logs names of locations in locationsJson that have failed validateLocation.
  *
  * @see showNextStep {boolean} Whether to show noMenuLocationsReport automatically, default to false
  * @see noMenuLocationsReport
@@ -737,7 +737,7 @@ function noXmlMatchLocationsReport(showNextStep = false) {
 }
 
 /**
- * Logs name of locations in locationsJson that have passed validateLocation but failed fetchMenu
+ * Logs name of locations in locationsJson that have passed validateLocation but failed fetchMenu.
  *
  * @param showNextStep {boolean} Whether to show noSiteMatchLocationsReport automatically, default to false
  * @see noSiteMatchLocationsReport
@@ -771,7 +771,7 @@ function noMenuLocationsReport(showNextStep = false) {
 }
 
 /**
- * Logs names of locations in locationsJson that have failed checkSite
+ * Logs names of locations in locationsJson that have failed checkSite.
  *
  * @param showNextStep {boolean} Whether to show excessLocationsReport automatically, default to false
  * @see excessLocationsReport
@@ -814,6 +814,13 @@ function noSiteMatchLocationsReport(showNextStep = false) {
  * @return {void}
  */
 function excessLocationsReport(showNextStep = false) {
+    /**
+     * Logs names of locations in locationsXml that have failed checkForXmlExcess.
+     *
+     * @see locationsXml
+     * @see checkForXmlExcess
+     * @return {void}
+     */
     function xmlExcessReport() {
         const xmlExcessLocations = locationsWithStatus(LocationStatus.xmlExcess);
 
@@ -833,6 +840,16 @@ function excessLocationsReport(showNextStep = false) {
         }, 50);
     }
 
+    /**
+     * Logs names of locations in siteLocations that have failed checkForSiteExcess.
+     *
+     * @param xmlExcessExist {boolean} Whether there are any locations in locationsXml that have failed checkForXmlExcess
+     * @see locationsXml
+     * @see checkForXmlExcess
+     * @see siteLocations
+     * @see checkForSiteExcess
+     * @return {void}
+     */
     function siteExcessReport(xmlExcessExist) {
         const siteExcessLocations = locationsWithStatus(LocationStatus.siteExcess);
 
@@ -855,7 +872,7 @@ function excessLocationsReport(showNextStep = false) {
 }
 
 /**
- * Shows a table of all locations in locationsJson with their names and test results
+ * Shows a table of all locations in locationsJson with their names and test results.
  *
  * @see locationsJson
  * @return {void}
@@ -878,7 +895,7 @@ function locationsTableReport() {
 }
 
 /**
- * Shows all previously thrown error messages
+ * Shows all previously thrown error messages.
  *
  * @see locationsJson
  * @return {void}
@@ -905,7 +922,7 @@ function errorMsgReport() {
 }
 
 /**
- * Validates if an email address is valid
+ * Validates if an email address is valid.
  *
  * @param email {string} Email address to validate
  * @return {boolean}
@@ -915,7 +932,7 @@ function validateEmail(email) {
 }
 
 /**
- * Decides whether to store the user inputted email address in typedInEmail, or returns back to normal mode
+ * Decides whether to store the user inputted email address in typedInEmail, or returns back to normal mode.
  *
  * @param line {string} Keyboard input
  * @see typedInEmail
@@ -940,7 +957,7 @@ function handleEmailAddressInput(line) {
 }
 
 /**
- * Confirms whether to send email
+ * Confirms whether to send email.
  *
  * @param line {string} Keyboard input
  * @see sendEmail
@@ -977,7 +994,7 @@ function confirmSendEmail(line) {
 }
 
 /**
- * Stores the user’s email-remember setting in currentConfig
+ * Stores the user’s email-remember setting in currentConfig.
  *
  * @param line {string} Keyboard input
  * @see currentConfig
@@ -1079,7 +1096,7 @@ function handleEmailRemember(line) {
 }
 
 /**
- * Confirms whether to rerun all tests
+ * Confirms whether to rerun all tests.
  *
  * @param line {string} Keyboard input
  * @see rerunTest
@@ -1098,7 +1115,7 @@ function confirmRerun(line) {
 }
 
 /**
- * Logs message in console and pushes it to allErrorMsg, if necessary
+ * Logs message in console and pushes it to allErrorMsg, if necessary.
  *
  * @param msg {string} Message to log
  * @param logMethod {string} Method to log: log (by default), warn (w), or error (e)
@@ -1119,7 +1136,7 @@ function logAndPush(msg, logMethod = "log") {
 }
 
 /**
- * Logs the instruction for keyboard input
+ * Logs the instruction for keyboard input.
  *
  * @return {void}
  */
@@ -1135,7 +1152,7 @@ function typeKeyPrompt() {
 }
 
 /**
- * Terminates the test if fatal error is found
+ * Terminates the test if an fatal error has occurred.
  *
  * @return {void}
  */
@@ -1148,7 +1165,7 @@ function terminateTest() {
 }
 
 /**
- * Resets the program and reruns all the tests
+ * Resets the program and reruns all the tests.
  *
  * @return {void}
  */
@@ -1167,7 +1184,7 @@ function rerunTest() {
 }
 
 /**
- * Sends a new email composed by composeMessage
+ * Sends a new email composed by composeMessage.
  *
  * @param recipient {string} Email address to send the email to
  * @param finalHandler {function} Handler after sending the email
@@ -1176,7 +1193,7 @@ function rerunTest() {
  */
 function sendEmail(recipient, finalHandler = () => {}) {
     /**
-     * Composes new email message for sendEmail to send
+     * Composes new email message for sendEmail to send.
      *
      * @param recipient {string} Email address to send the email to
      * @see sendEmail
@@ -1221,7 +1238,7 @@ function sendEmail(recipient, finalHandler = () => {}) {
 }
 
 /**
- * Decides whether to automatically send an email or show typeKeyPrompt
+ * Decides whether to automatically send an email or show typeKeyPrompt.
  *
  * @param logBlankLine {boolean} Whether to log a blank line before showing typeKeyPrompt
  * @see typeKeyPrompt
@@ -1229,7 +1246,7 @@ function sendEmail(recipient, finalHandler = () => {}) {
  */
 function autoSendEmailOrShowPrompt(logBlankLine) {
     /**
-     * Schedules automatic rerun
+     * Schedules automatic rerun.
      *
      * @see rerunTest
      * @return {void}
@@ -1242,7 +1259,7 @@ function autoSendEmailOrShowPrompt(logBlankLine) {
     }
 
     /**
-     * Show typeKeyPrompt with a timeout with or without a blank line
+     * Show typeKeyPrompt with a timeout with or without a blank line.
      *
      * @see typeKeyPrompt
      * @return {void}
@@ -1272,7 +1289,7 @@ function autoSendEmailOrShowPrompt(logBlankLine) {
 }
 
 /**
- * Self-invoking main function
+ * Self-invoking main function.
  *
  * @return {void}
  */
