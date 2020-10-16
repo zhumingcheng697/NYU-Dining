@@ -18,7 +18,7 @@ const devSiteUrl = "https://nyu-test.modolabs.net/default/chartwells_dining/inde
  * @see devSiteUrl
  * @type {boolean}
  */
-const useDevSite = !!process.env.DEV_SITE || true;
+const useDevSite = !!process.env.DEV_SITE;
 
 /**
  * Makes the console logs colorful.
@@ -377,7 +377,7 @@ function fetchLocationsXml() {
                                     if (loc.name === loc.mapName) {
                                         delete loc.mapName;
                                     } else {
-                                        logAndPush(`${logStyle.fg.red}Location name "${loc.name}" is not the same as map name "${loc.mapName}" in "locations.xml"${logStyle.reset}`, "e");
+                                        logAndPush(`${logStyle.fg.red}Location name "${loc.name}" does not match map name "${loc.mapName}" in "locations.xml"${logStyle.reset}`, "e");
                                     }
 
                                     loc["id"] = loc["eventsFeedConfig"][0]["locationID"][0];
@@ -392,12 +392,6 @@ function fetchLocationsXml() {
                                 console.log(`${logStyle.fg.green}${locationsXml.length} location${locationsXml.length === 1 ? "" : "s"} found in "locations.xml"${logStyle.reset}`);
                                 fetchLocationsFromSite();
                             }, 50);
-
-
-
-
-
-
                         } else {
                             logAndPush(`${logStyle.fg.red}Fatal Error: No locations found in "locations.xml"${logStyle.reset}`, "e");
                             terminateTest();
@@ -1141,10 +1135,10 @@ function logAndPush(msg, logMethod = "log") {
  * @return {void}
  */
 function typeKeyPrompt() {
-    console.log(`${logStyle.fg.yellow}Type "L" to see the log of all error messages thrown in the last run${currentConfig.sendEmailAfterShowingErrors === -1 ? "" : ` and${currentConfig.sendEmailAfterShowingErrors === 1 && validateEmail(currentConfig.rememberedEmail) ? " " : " optionally "}email yourself a copy of it`}${logStyle.reset}`);
-    console.log(`${logStyle.fg.yellow}Type "T" to see a table of all locations with their names and test results${logStyle.reset}`);
-    console.log(`${logStyle.fg.yellow}Type "R" to rerun the tests on all locations again${logStyle.reset}`);
-    console.log(`${logStyle.fg.yellow}Type "H" to get help with additional commands${logStyle.reset}`);
+    console.log(`${logStyle.fg.yellow}Type "L" to see the log of all error messages thrown in the last run${currentConfig.sendEmailAfterShowingErrors === -1 ? "" : ` and${currentConfig.sendEmailAfterShowingErrors === 1 && validateEmail(currentConfig.rememberedEmail) ? " " : " optionally "}email yourself a copy of it`}
+Type "T" to see a table of all locations with their names and test results
+Type "R" to rerun the tests on all locations again
+Type "H" to get help with additional commands${logStyle.reset}`);
 }
 
 /**
@@ -1153,11 +1147,52 @@ function typeKeyPrompt() {
  * @return {void}
  */
 function additionalHelpPrompt() {
-    console.log(`${logStyle.fg.white}Type "P" to see the locations that passed all tests${logStyle.reset}`);
-    console.log(`${logStyle.fg.white}Type "X" to see the locations that failed the XML test (do not have a match in XML)${logStyle.reset}`);
-    console.log(`${logStyle.fg.white}Type "M" to see the locations that failed the menu test (have issue accessing menus)${logStyle.reset}`);
-    console.log(`${logStyle.fg.white}Type "S" to see the locations that failed the site test (do not have a match on the ${useDevSite ? "dev" : "production"} site)${logStyle.reset}`);
-    console.log(`${logStyle.fg.white}Type "E" to see the locations that failed the excess test (do not have a match in "locations.json")${logStyle.reset}`);
+    console.log(`${logStyle.fg.white}Type "P" to see the locations that passed all tests
+Type "X" to see the locations that failed the XML test (do not have a match in XML)
+Type "M" to see the locations that failed the menu test (have issue accessing menus)
+Type "S" to see the locations that failed the site test (do not have a match on the ${useDevSite ? "dev" : "production"} site)
+Type "E" to see the locations that failed the excess test (do not have a match in "locations.json")
+Type "D" to see the definitions of all location statuses${logStyle.reset}`);
+}
+
+/**
+ * Logs the definition of all location statuses.
+ *
+ * @return {void}
+ */
+function locationStatusDefinitions() {
+    console.log(`${logStyle.fg.green}${LocationStatus.passed}${logStyle.reset}
+This dining location passed ${logStyle.bright}all tests${logStyle.reset}, meaning that it:${logStyle.fg.white}
+- has a match in "locations.json"
+- has a match in "locations.xml"
+- has a valid menu
+- has a match on the ${useDevSite ? "dev" : "production"} site${logStyle.reset}
+
+${logStyle.fg.red}${LocationStatus.xmlError}${logStyle.reset}
+This dining location failed the ${logStyle.bright}XML test${logStyle.reset}, meaning that it:${logStyle.fg.white}
+- has a match in "locations.json"
+- does ${logStyle.bright}not${logStyle.reset}${logStyle.fg.white} have a match in "locations.xml"${logStyle.reset}
+
+${logStyle.fg.red}${LocationStatus.menuError}${logStyle.reset}
+This dining location failed the ${logStyle.bright}menu test${logStyle.reset}, meaning that it:${logStyle.fg.white}
+- has a match in "locations.json"
+- has a match in "locations.xml"
+- does ${logStyle.bright}not${logStyle.reset}${logStyle.fg.white} have a valid menu${logStyle.reset}
+
+${logStyle.fg.red}${LocationStatus.siteError}${logStyle.reset}
+This dining location failed the ${logStyle.bright}site test${logStyle.reset}, meaning that it:${logStyle.fg.white}
+- has a match in "locations.json"
+- does ${logStyle.bright}not${logStyle.reset}${logStyle.fg.white} have a match on the ${useDevSite ? "dev" : "production"} site${logStyle.reset}
+
+${logStyle.fg.red}${LocationStatus.xmlExcess}${logStyle.reset}
+This dining location failed the ${logStyle.bright}XML-excess test${logStyle.reset}, meaning that it:${logStyle.fg.white}
+- has a match in "locations.xml"
+- does ${logStyle.bright}not${logStyle.reset}${logStyle.fg.white} have a match in "locations.json"${logStyle.reset}
+
+${logStyle.fg.red}${LocationStatus.siteExcess}${logStyle.reset}
+This dining location failed the ${logStyle.bright}site-excess test${logStyle.reset}, meaning that it:${logStyle.fg.white}
+- has a match on the ${useDevSite ? "dev" : "production"} site
+- does ${logStyle.bright}not${logStyle.reset}${logStyle.fg.white} have a match in "locations.json"${logStyle.reset}`);
 }
 
 /**
@@ -1347,8 +1382,11 @@ function autoSendEmailOrShowPrompt(logBlankLine) {
                     case "E":
                         excessLocationsReport();
                         break;
+                    case "D":
+                        locationStatusDefinitions();
+                        break;
                     default:
-                        console.error(`${logStyle.fg.red}Please type in a valid key. (L/T/R/H/P/X/M/S/E)${logStyle.reset}`);
+                        console.error(`${logStyle.fg.red}Please type in a valid key. (L/T/R/H/P/X/M/S/E/D)${logStyle.reset}`);
                         return;
                 }
 
