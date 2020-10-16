@@ -1136,19 +1136,28 @@ function logAndPush(msg, logMethod = "log") {
 }
 
 /**
- * Logs the instruction for keyboard input.
+ * Logs the basic instruction for keyboard input.
  *
  * @return {void}
  */
 function typeKeyPrompt() {
     console.log(`${logStyle.fg.yellow}Type "L" to see the log of all error messages thrown in the last run${currentConfig.sendEmailAfterShowingErrors === -1 ? "" : ` and${currentConfig.sendEmailAfterShowingErrors === 1 && validateEmail(currentConfig.rememberedEmail) ? " " : " optionally "}email yourself a copy of it`}${logStyle.reset}`);
-    console.log(`${logStyle.fg.yellow}Type "P" to see the locations that passed all tests${logStyle.reset}`);
-    console.log(`${logStyle.fg.yellow}Type "X" to see the locations that failed the XML test (do not have a match in XML)${logStyle.reset}`);
-    console.log(`${logStyle.fg.yellow}Type "M" to see the locations that failed the menu test (have issue accessing menus)${logStyle.reset}`);
-    console.log(`${logStyle.fg.yellow}Type "S" to see the locations that failed the site test (do not have a match on the ${useDevSite ? "dev" : "production"} site)${logStyle.reset}`);
-    console.log(`${logStyle.fg.yellow}Type "E" to see the locations that failed the excess test (do not have a match in "locations.json")${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "T" to see a table of all locations with their names and test results${logStyle.reset}`);
     console.log(`${logStyle.fg.yellow}Type "R" to rerun the tests on all locations again${logStyle.reset}`);
+    console.log(`${logStyle.fg.yellow}Type "H" to get help with additional commands${logStyle.reset}`);
+}
+
+/**
+ * Logs the additional instruction for keyboard input.
+ *
+ * @return {void}
+ */
+function additionalHelpPrompt() {
+    console.log(`${logStyle.fg.white}Type "P" to see the locations that passed all tests${logStyle.reset}`);
+    console.log(`${logStyle.fg.white}Type "X" to see the locations that failed the XML test (do not have a match in XML)${logStyle.reset}`);
+    console.log(`${logStyle.fg.white}Type "M" to see the locations that failed the menu test (have issue accessing menus)${logStyle.reset}`);
+    console.log(`${logStyle.fg.white}Type "S" to see the locations that failed the site test (do not have a match on the ${useDevSite ? "dev" : "production"} site)${logStyle.reset}`);
+    console.log(`${logStyle.fg.white}Type "E" to see the locations that failed the excess test (do not have a match in "locations.json")${logStyle.reset}`);
 }
 
 /**
@@ -1313,6 +1322,16 @@ function autoSendEmailOrShowPrompt(logBlankLine) {
                     case "L":
                         errorMsgReport();
                         return;
+                    case "T":
+                        locationsTableReport();
+                        break;
+                    case "R":
+                        currentRunMode = RunMode.willRerun;
+                        console.warn(`${logStyle.fg.red}Will rerun all tests. Continue? (y/n)${logStyle.reset}`)
+                        return;
+                    case "H":
+                        additionalHelpPrompt();
+                        return;
                     case "P":
                         passedLocationsReport();
                         break;
@@ -1328,15 +1347,8 @@ function autoSendEmailOrShowPrompt(logBlankLine) {
                     case "E":
                         excessLocationsReport();
                         break;
-                    case "T":
-                        locationsTableReport();
-                        break;
-                    case "R":
-                        currentRunMode = RunMode.willRerun;
-                        console.warn(`${logStyle.fg.red}Will rerun all tests. Continue? (y/n)${logStyle.reset}`)
-                        return;
                     default:
-                        console.error(`${logStyle.fg.red}Please type in a valid key. (L/P/X/M/S/T/R)${logStyle.reset}`);
+                        console.error(`${logStyle.fg.red}Please type in a valid key. (L/T/R/H/P/X/M/S/E)${logStyle.reset}`);
                         return;
                 }
 
