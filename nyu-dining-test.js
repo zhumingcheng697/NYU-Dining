@@ -515,13 +515,13 @@ function validateLocation(jsonIndex = 0) {
                     }
                 } else {
                     setLocationStatus(loc.name, LocationStatus.xmlError);
-                    checkSite(loc.name);
+                    checkSite(loc.name, !!loc["open"]);
                     validateNext();
                 }
             } catch (e) {
                 logAndPush(`${logStyle.fg.red}Something went wrong when trying to access "${loc.name}" in "locations.xml"${logStyle.reset}`, "e");
                 setLocationStatus(loc.name, LocationStatus.xmlError);
-                checkSite(loc.name);
+                checkSite(loc.name, !!loc["open"]);
                 validateNext();
             }
         }, 50);
@@ -584,11 +584,12 @@ function fetchMenu(url, location, handler = () => {}) {
  *
  * @see siteLocations
  * @param location {string} Location to check
+ * @param shouldExist {boolean} Whether the location should exist
  * @return {boolean} Whether the location is in siteLocations
  */
-function checkSite(location) {
+function checkSite(location, shouldExist = true) {
     const match = siteLocations.includes(location);
-    logAndPush(`${match ? logStyle.fg.green : logStyle.fg.red}"${location}" is${match ? " " : " not "}found on ${useDevSite ? "dev" : "production"} site${logStyle.reset}`, match ? "" : "e");
+    logAndPush(`${match ? logStyle.fg.green : (shouldExist ? logStyle.fg.red : "")}"${location}" is${match ? " " : " not "}found on ${useDevSite ? "dev" : "production"} site${logStyle.reset}`, match ? "" : (shouldExist ? "e" : "w"));
     if (!match) {
         setLocationStatus(location, LocationStatus.siteError);
     }
@@ -1266,7 +1267,7 @@ function sendEmail(recipient, finalHandler = () => {}) {
         };
     }
 
-    console.log(`${logStyle.fg.white}------Emailing error messages to "${recipient}"------${logStyle.reset}`);
+    console.log(`${logStyle.fg.white}------Emailing logs to "${recipient}"------${logStyle.reset}`);
 
     transport.sendMail(composeMessage(recipient))
         .then(() => {
