@@ -6,6 +6,8 @@
 
 - Check the availability and validity of the location and menu data from the S3 bucket on which the dining portion of NYU Mobile relies
 
+- Check the presence and absence of dining locations on the production or development NYU Mobile dining website
+
 - Email the users a copy of all the previously thrown error messages
 
 - Automatically rerun all the tests after a set interval or manually rerun all the tests with keyboard commands
@@ -39,7 +41,17 @@
     $ npm start
     ```
    
-5. Follow the instructions and start testing!
+   > By default, tests will be run against the production website. If you want to run tests against the development website, set the environment variable `DEV_SITE` to any truthy value. Remember that environment variables are handled as strings, so anything other than empty spaces (which will ignored by the shell) will result to true.
+   > ```
+   > $ DEV_SITE=1 node nyu-dining-test.js
+   > ```
+   > or
+   > 
+   > ```
+   > $ DEV_SITE=1 npm start
+   > ```
+   
+5. Follow the instructions in the CLI and start testing!
 
 ## Typical Configurations
 
@@ -96,13 +108,13 @@
     }
     ```
 
-- If you **do not** want the program to automatically rerun, and **wish for a friendlier user interaction experience**, simply leave `config.json` as is and configure your preferences within the program.
+- If you **do not** want the program to automatically rerun, and **wish for a friendlier CLI**, simply leave `config.json` as is and configure your preferences within the CLI.
 
 ## Properties in Config File
 
 - `devMode` - **Required**. *Boolean*. Determines how the users want the program to run. Default to `false`. 
     
-    > Set to `true` to achieve a higher level of automation and flexibility, or set to `false` to allow the users to modify the configuration directly within the program using keyboard interaction.
+    > Set to `true` to achieve a higher level of automation and flexibility, or set to `false` to allow the users to modify the configuration directly within the CLI using keyboard interaction.
 
 - `autoRunIntervalInMinute` - **Required**. *Number*. Determines if and how often the program should auto rerun. Default to `0`.
     
@@ -136,10 +148,50 @@
     2. can be parsed as XML
     3. contains data for any dining locations, and if so, for how many
     
-3. Check if each dining location:
-    1. has field `open`, and if so, is it set to `true` or `false`
-    2. has field `schedules`, and if so, how many schedules are there
-    3. has field `menuURL`, and if so, if the JSON file at that URL:
-        1. can be loaded from the S3 bucket
-        2. can be parsed as JSON
-        3. has field `menus`, and if so, how many menus are there
+3. Check if the production or development NYU Mobile dining website:
+    1. can be loaded from the server
+    2. can be parsed as HTML
+    3. contains data for any dining locations, and if so, for how many
+    
+4. Check if each dining location in `locations.json`:
+    - has field `open`, and if so, is it set to `true` or `false`
+    - has field `schedules`, and if so, how many schedules are there
+    - has a match in `locations.xml`, and if so, if that match:
+        - has field `menuURL`, and if so, if the JSON file at that URL:
+            1. can be loaded from the S3 bucket
+            2. can be parsed as JSON
+            3. has field `menus`, and if so, how many menus are there
+    - has a match on the production or development NYU Mobile dining website
+
+5. Check if any dining locations in `locations.xml` do not have a match in `locations.json`
+
+6. Check if any dining locations on the production or development NYU Mobile dining website do not have a match in `locations.json`
+        
+## Definitions of Location Statuses
+
+- `PASSED` - This dining location passed **all tests**, meaning that it:
+    - has a match in `locations.json`
+    - has a match in `locations.xml`
+    - has a valid menu
+    - has a match on the production or development NYU Mobile dining website
+
+ - `* XML Error *` - This dining location failed the **XML test**, meaning that it:
+    - has a match in `locations.json`
+    - does **not** have a match in `locations.xml`
+    
+ - `* Menu Error *` - This dining location failed the **menu test**, meaning that it:
+    - has a match in `locations.json`
+    - has a match in `locations.xml`
+    - does **not** have a valid menu
+
+ - `* Site Error *` - This dining location failed the **site test**, meaning that it:
+    - has a match in `locations.json`
+    - does **not** have a match on the production or development NYU Mobile dining website
+
+ - `* XML Excess *` - This dining location failed the **XML-excess test**, meaning that it:
+    - has a match in `locations.xml`
+    - does **not** have a match in `locations.json`
+    
+ - `* Site Excess *` - This dining location failed the **site-excess test**, meaning that it:
+    - has a match on the production or development NYU Mobile dining website
+    - does **not** have a match in `locations.json`
