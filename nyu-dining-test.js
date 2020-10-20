@@ -1,15 +1,12 @@
 const fs = require('fs');
-const he = require("he");
 const readline = require('readline');
-const nodeFetch = require("node-fetch");
+const fetchFile = require("node-fetch");
 const nodemailer = require("nodemailer");
 const parseXml = require("xml2js").parseString;
 const HTMLParser = require('node-html-parser');
 
 const locationsJsonUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.json";
 const locationsXmlUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.xml";
-const prodSiteUrl = "https://mobile.nyu.edu/default/dining_nyu_eats_locations_and_menus/index";
-const devSiteUrl = "https://nyu-test.modolabs.net/default/chartwells_dining/index";
 
 /**
  * Whether to check for locations on prodSiteUrl or devSiteUrl.
@@ -130,7 +127,7 @@ const RunMode = {
  *
  * @type {{devMode: boolean, autoRunIntervalInMinute: number, autoSendEmailAfterRun: number, sendEmailAfterShowingErrors: number, rememberEmail: number, rememberedEmail: string}}
  */
-let currentConfig = {
+let config = {
     devMode: false,
     autoRunIntervalInMinute: 0,
     autoSendEmailAfterRun: 0,
@@ -164,7 +161,7 @@ let typedInEmail = "";
  * Object representation of locations parsed from locationsJsonUrl.
  *
  * @see locationsJsonUrl
- * @type {[Object]}
+ * @type {Object[]}
  */
 let locationsJson = [];
 
@@ -172,7 +169,7 @@ let locationsJson = [];
  * Object representation of locations parsed from locationsXmlUrl.
  *
  * @see locationsXml
- * @type {[Object]}
+ * @type {Object[]}
  */
 let locationsXml = [];
 
@@ -198,7 +195,7 @@ let locationResults = {};
  *
  * @see validateLocation
  * @see fetchMenu
- * @type {[string]}
+ * @type {string[]}
  */
 let allErrorMsg = [];
 
@@ -219,8 +216,8 @@ let fatalErrorOccurred = false;
 /**
  * Tries to load currentConfig from local, or else initialize one with the default values.
  *
- * @param handler {function} Runs after currentConfig load either succeeded or failed
- * @see currentConfig
+ * @param handler {function} Runs after config load either succeeded or failed
+ * @see config
  * @return {void}
  */
 function loadOrInitConfig(handler = () => {}) {
@@ -242,12 +239,12 @@ function loadOrInitConfig(handler = () => {}) {
                     const parsedEmail = parsedConfig.rememberedEmail;
 
                     if (typeof parsedDevMode === "boolean" && typeof parsedInterval === "number" && [-1, 0, 1].includes(parsedAutoSend) && [-1, 0, 1].includes(parsedSendAfterShow) && [-1, 0, 1].includes(parsedRemember) && (parsedEmail === "" || validateEmail(parsedEmail))) {
-                        currentConfig.devMode = parsedDevMode;
-                        currentConfig.autoRunIntervalInMinute = parsedInterval;
-                        currentConfig.autoSendEmailAfterRun = parsedAutoSend;
-                        currentConfig.sendEmailAfterShowingErrors = parsedSendAfterShow;
-                        currentConfig.rememberEmail = parsedRemember;
-                        currentConfig.rememberedEmail = parsedEmail;
+                        config.devMode = parsedDevMode;
+                        config.autoRunIntervalInMinute = parsedInterval;
+                        config.autoSendEmailAfterRun = parsedAutoSend;
+                        config.sendEmailAfterShowingErrors = parsedSendAfterShow;
+                        config.rememberEmail = parsedRemember;
+                        config.rememberedEmail = parsedEmail;
                         console.log(`${logStyle.fg.green}Configuration load succeeded${logStyle.reset}`);
                         handler();
                         return;
@@ -270,19 +267,19 @@ function loadOrInitConfig(handler = () => {}) {
 /**
  * Tries to save currentConfig to local.
  *
- * @param handler {function} Runs after currentConfig save either succeeded or failed
- * @see currentConfig
+ * @param handler {function} Runs after config save either succeeded or failed
+ * @see config
  * @return {void}
  */
 function saveConfig(handler = () => {}) {
-    fs.writeFile("config.json", JSON.stringify(currentConfig, null, 2), err => {
+    fs.writeFile("config.json", JSON.stringify(config, null, 2), err => {
         if (err) {
             console.error(`${logStyle.fg.red}Configuration save failed: ${err}${logStyle.reset}`);
             handler();
         } else {
             console.log(`${logStyle.fg.green}Configuration save succeeded${logStyle.reset}`);
 
-            if (!currentConfig.devMode && currentRunMode === RunMode.standard) {
+            if (!config.devMode && runMode === "") {
                 console.log(`${logStyle.fg.yellow}Delete "config.json" to reset all preferences${logStyle.reset}`);
             }
 
@@ -316,13 +313,13 @@ function setLocationStatus(location, status) {
  */
 function fetchLocationsJson() {
     console.log(`${logStyle.fg.white}------Loading "locations.json"------${logStyle.reset}`);
-    nodeFetch(locationsJsonUrl)
+    fetchFile(locationsJsonUrl)
         .then(res => {
             console.log(`${logStyle.fg.green}"locations.json" load succeeded${logStyle.reset}`);
             return res.text();
         }).then(text => {
             try {
-                locationsJson = JSON.parse(`${text}`);
+                locationsJson = JSON.parse(text);
                 locationsJson.forEach(loc => {
                     loc["schedules"] = typeof loc["schedules"] === "undefined" ? -1 : loc["schedules"].length;
                     delete loc["address"];
@@ -357,7 +354,7 @@ function fetchLocationsJson() {
  */
 function fetchLocationsXml() {
     console.log(`${logStyle.fg.white}------Loading "locations.xml"------${logStyle.reset}`);
-    nodeFetch(locationsXmlUrl)
+    fetchFile(locationsXmlUrl)
         .then(res => {
             console.log(`${logStyle.fg.green}"locations.xml" load succeeded${logStyle.reset}`);
             return res.text();
@@ -546,7 +543,7 @@ function fetchMenu(url, location, handler = () => {}) {
             return res.text();
         }).then(text => {
             try {
-                let menu = JSON.parse(`${text}`);
+                let menu = JSON.parse(text);
                 console.log(`${logStyle.fg.green}Menu parse succeeded ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`);
                 menu["menus"] = (typeof menu["menus"] === "undefined" ? -1 : menu["menus"].length);
 
@@ -900,11 +897,11 @@ function errorMsgReport() {
         console.log(allErrorMsg.join("\n"));
         console.log("");
 
-        if (currentConfig.sendEmailAfterShowingErrors === 1 && validateEmail(currentConfig.rememberedEmail)) {
-            handleEmailAddressInput(currentConfig.rememberedEmail);
+        if (config.sendEmailAfterShowingErrors === 1 && validateEmail(config.rememberedEmail)) {
+            handleEmailAddressInput(config.rememberedEmail);
             return;
-        } else if (currentConfig.sendEmailAfterShowingErrors !== -1) {
-            currentRunMode = RunMode.willReceiveEmail;
+        } else if (config.sendEmailAfterShowingErrors !== -1) {
+            runMode = "E1";
             console.log(`${logStyle.fg.yellow}If you would like to email yourself a copy of these error messages, type in your email address. Otherwise, press enter.${logStyle.reset}`);
             return;
         }
@@ -935,16 +932,16 @@ function validateEmail(email) {
  */
 function handleEmailAddressInput(line) {
     if (!line) {
-        if (currentConfig.devMode || currentConfig.rememberEmail === -1 || currentConfig.sendEmailAfterShowingErrors === 1) {
-            currentRunMode = RunMode.standard;
+        if (config.devMode || config.rememberEmail === -1 || config.sendEmailAfterShowingErrors === 1) {
+            runMode = "";
             typeKeyPrompt();
         } else {
-            currentRunMode = RunMode.willDisableEmail;
+            runMode = "E0";
             console.log(`${logStyle.fg.yellow}Type in "N" to never ask to send emails again, or press enter to always ask whether to send an email by default`);
         }
     } else if (validateEmail(line)) {
         typedInEmail = line;
-        currentRunMode = RunMode.willConfirmEmail;
+        runMode = "E2";
         console.log(`${logStyle.fg.yellow}An email with a copy of the error messages will be sent to "${typedInEmail}". Continue? (y/n)${logStyle.reset}`);
     } else {
         console.error(`${logStyle.fg.red}Please type in a valid email address, or press enter to go back${logStyle.reset}`);
@@ -960,12 +957,12 @@ function handleEmailAddressInput(line) {
  */
 function confirmSendEmail(line) {
     if (line.toUpperCase() === "Y") {
-        if (!currentConfig.devMode && currentConfig.rememberEmail === 0) {
-            currentRunMode = RunMode.willRememberEmail;
+        if (!config.devMode && config.rememberEmail === 0) {
+            runMode = "E3";
             console.log(`${logStyle.fg.yellow}Type in "R" to remember this email address, type in "N" to never remember any email addresses, or press enter to not remember this email address and ask for an email address again the next time by default${logStyle.reset}`);
         } else {
-            if (currentConfig.devMode && currentConfig.rememberEmail === 1) {
-                currentConfig.rememberedEmail = typedInEmail;
+            if (config.devMode && config.rememberEmail === 1) {
+                config.rememberedEmail = typedInEmail;
                 saveConfig(() => {
                     sendEmail(typedInEmail);
                 });
@@ -975,11 +972,11 @@ function confirmSendEmail(line) {
             sendEmail(typedInEmail);
         }
     } else if (line.toUpperCase() === "N") {
-        if (!currentConfig.devMode && currentConfig.sendEmailAfterShowingErrors === 1 && validateEmail(currentConfig.rememberedEmail)) {
-            currentRunMode = RunMode.willForgetEmail;
+        if (!config.devMode && config.sendEmailAfterShowingErrors === 1 && validateEmail(config.rememberedEmail)) {
+            runMode = "E4";
             console.log(`${logStyle.fg.yellow}Do you want us to forget this email address? (y/n)${logStyle.reset}`);
         } else {
-            currentRunMode = RunMode.standard;
+            runMode = "";
             console.log("");
             typeKeyPrompt();
         }
@@ -992,101 +989,89 @@ function confirmSendEmail(line) {
  * Stores the user’s email-remember setting in currentConfig.
  *
  * @param line {string} Keyboard input
- * @see currentConfig
+ * @see config
  * @return {void}
  */
 function handleEmailRemember(line) {
-    switch (currentRunMode) {
-        case RunMode.willDisableEmail:
-            if (line.toUpperCase() === "N") {
-                currentConfig.autoSendEmailAfterRun = -1;
-                currentConfig.sendEmailAfterShowingErrors = -1;
-                console.log(`${logStyle.fg.white}Thank you, we will remember not to send emails!${logStyle.reset}`);
-            } else {
-                currentConfig.autoSendEmailAfterRun = 0;
-                currentConfig.sendEmailAfterShowingErrors = 1;
-                console.log(`${logStyle.fg.white}Thank you, we will not ask this again next time!${logStyle.reset}`);
-            }
+    if (runMode === "E0") {
+        if (line.toUpperCase() === "N") {
+            config.autoSendEmailAfterRun = -1;
+            config.sendEmailAfterShowingErrors = -1;
+            console.log(`${logStyle.fg.white}Thank you, we will remember not to send emails!${logStyle.reset}`);
+        } else {
+            config.autoSendEmailAfterRun = 0;
+            config.sendEmailAfterShowingErrors = 1;
+            console.log(`${logStyle.fg.white}Thank you, we will not ask this again next time!${logStyle.reset}`);
+        }
 
-            saveConfig(() => {
-                console.log("");
-                currentRunMode = RunMode.standard;
-                typeKeyPrompt();
-            });
+        saveConfig(() => {
+            console.log("");
+            runMode = "";
+            typeKeyPrompt();
+        });
+    } else if (runMode === "E3") {
+        if (line.toUpperCase() === "R") {
+            config.sendEmailAfterShowingErrors = 1;
+            config.rememberEmail = 1;
+            config.rememberedEmail = typedInEmail;
+            console.log(`${logStyle.fg.white}Thank you, we will remember to email "${config.rememberedEmail}" the next time!${logStyle.reset}`);
 
-            break;
-
-        case RunMode.willRememberEmail:
-            if (line.toUpperCase() === "R") {
-                currentConfig.sendEmailAfterShowingErrors = 1;
-                currentConfig.rememberEmail = 1;
-                currentConfig.rememberedEmail = typedInEmail;
-                console.log(`${logStyle.fg.white}Thank you, we will remember to email "${currentConfig.rememberedEmail}" the next time!${logStyle.reset}`);
-
-                if (currentConfig.autoSendEmailAfterRun === 0) {
-                    currentRunMode = RunMode.willAutoSendEmails;
-                    console.log(`${logStyle.fg.yellow}Would you like to automatically receive an email after each run of the test? (y/n)${logStyle.reset}`);
-                    return;
-                }
-            } else if (line.toUpperCase() === "N") {
-                currentConfig.autoSendEmailAfterRun = -1;
-                currentConfig.sendEmailAfterShowingErrors = 0;
-                currentConfig.rememberEmail = -1;
-                currentConfig.rememberedEmail = "";
-                console.log(`${logStyle.fg.white}Thank you, we will not ask this again next time!${logStyle.reset}`);
-            } else {
-                if (line) {
-                    console.log("");
-                }
-
-                sendEmail(typedInEmail);
+            if (config.autoSendEmailAfterRun === 0) {
+                runMode = "E5";
+                console.log(`${logStyle.fg.yellow}Would you like to automatically receive an email after each run of the test? (y/n)${logStyle.reset}`);
                 return;
             }
-
-            saveConfig(() => {
-                sendEmail(typedInEmail);
-            });
-
-            break;
-
-        case RunMode.willForgetEmail:
-            if (line.toUpperCase() === "Y") {
-                console.log(`${logStyle.fg.white}Thank you, we have forgotten email "${currentConfig.rememberedEmail}" now!${logStyle.reset}`);
-                currentConfig.autoSendEmailAfterRun = 0;
-                currentConfig.sendEmailAfterShowingErrors = 0;
-                currentConfig.rememberEmail = 0;
-                currentConfig.rememberedEmail = "";
-                saveConfig(() => {
-                    currentRunMode = RunMode.willReceiveEmail;
-                    console.log(`${logStyle.fg.yellow}If you would like to email yourself a copy of these error messages to another email address, type that in. Otherwise, press enter.${logStyle.reset}`);
-                });
-            } else if (line.toUpperCase() === "N") {
-                currentRunMode = RunMode.standard;
+        } else if (line.toUpperCase() === "N") {
+            config.autoSendEmailAfterRun = -1;
+            config.sendEmailAfterShowingErrors = 0;
+            config.rememberEmail = -1;
+            config.rememberedEmail = "";
+            console.log(`${logStyle.fg.white}Thank you, we will not ask this again next time!${logStyle.reset}`);
+        } else {
+            if (line) {
                 console.log("");
-                typeKeyPrompt();
-            } else {
-                console.error(`${logStyle.fg.red}Please type in a valid key. (y/n)${logStyle.reset}`);
             }
 
-            break;
+            sendEmail(typedInEmail);
+            return;
+        }
 
-        case RunMode.willAutoSendEmails:
-            if (line.toUpperCase() === "Y") {
-                console.log(`${logStyle.fg.white}Thank you, we will remember to automatically email "${currentConfig.rememberedEmail}" after each run of the test!${logStyle.reset}`);
-                currentConfig.autoSendEmailAfterRun = 1;
-            } else if (line.toUpperCase() === "N") {
-                console.log(`${logStyle.fg.white}Thank you, we will not ask this again next time!${logStyle.reset}`);
-                currentConfig.autoSendEmailAfterRun = -1;
-            } else {
-                console.error(`${logStyle.fg.red}Please type in a valid key. (y/n)${logStyle.reset}`);
-                return;
-            }
-
+        saveConfig(() => {
+            sendEmail(typedInEmail);
+        });
+    } else if (runMode === "E4") {
+        if (line.toUpperCase() === "Y") {
+            console.log(`${logStyle.fg.white}Thank you, we have forgotten email "${config.rememberedEmail}" now!${logStyle.reset}`);
+            config.autoSendEmailAfterRun = 0;
+            config.sendEmailAfterShowingErrors = 0;
+            config.rememberEmail = 0;
+            config.rememberedEmail = "";
             saveConfig(() => {
-                sendEmail(currentConfig.rememberedEmail);
+                runMode = "E1";
+                console.log(`${logStyle.fg.yellow}If you would like to email yourself a copy of these error messages to another email address, type that in. Otherwise, press enter.${logStyle.reset}`);
             });
+        } else if (line.toUpperCase() === "N") {
+            runMode = "";
+            console.log("");
+            typeKeyPrompt();
+        } else {
+            console.error(`${logStyle.fg.red}Please type in a valid key. (y/n)${logStyle.reset}`);
+        }
+    } else if (runMode === "E5") {
+        if (line.toUpperCase() === "Y") {
+            console.log(`${logStyle.fg.white}Thank you, we will remember to automatically email "${config.rememberedEmail}" after each run of the test!${logStyle.reset}`);
+            config.autoSendEmailAfterRun = 1;
+        } else if (line.toUpperCase() === "N") {
+            console.log(`${logStyle.fg.white}Thank you, we will not ask this again next time!${logStyle.reset}`);
+            config.autoSendEmailAfterRun = -1;
+        } else {
+            console.error(`${logStyle.fg.red}Please type in a valid key. (y/n)${logStyle.reset}`);
+            return;
+        }
 
-            break;
+        saveConfig(() => {
+            sendEmail(config.rememberedEmail);
+        });
     }
 }
 
@@ -1101,7 +1086,7 @@ function confirmRerun(line) {
     if (line.toUpperCase() === "Y") {
         rerunTest();
     } else if (line.toUpperCase() === "N") {
-        currentRunMode = RunMode.standard;
+        runMode = "";
         console.log("");
         typeKeyPrompt();
     } else {
@@ -1278,7 +1263,7 @@ function sendEmail(recipient, finalHandler = () => {}) {
             finalHandler();
             console.log("");
             typeKeyPrompt();
-            currentRunMode = RunMode.standard;
+            runMode = "";
         });
 }
 
@@ -1297,9 +1282,9 @@ function autoSendEmailOrShowPrompt(logBlankLine) {
      * @return {void}
      */
     function scheduleAutoRerun() {
-        if (currentConfig.devMode && currentConfig.autoRunIntervalInMinute > 0) {
-            console.log(`${logStyle.fg.white}------Automatically rerunning in ${currentConfig.autoRunIntervalInMinute} minute${currentConfig.autoRunIntervalInMinute === 1 ? "" : "s"}------${logStyle.reset}`);
-            autoRerunId = setTimeout(rerunTest, currentConfig.autoRunIntervalInMinute * 60000);
+        if (config.devMode && config.autoRunIntervalInMinute > 0) {
+            console.log(`${logStyle.fg.white}------Automatically rerunning in ${config.autoRunIntervalInMinute} minute${config.autoRunIntervalInMinute === 1 ? "" : "s"}------${logStyle.reset}`);
+            autoRerunId = setTimeout(rerunTest, config.autoRunIntervalInMinute * 60000);
         }
     }
 
@@ -1323,8 +1308,8 @@ function autoSendEmailOrShowPrompt(logBlankLine) {
         }, 50);
     }
 
-    if (currentConfig.autoSendEmailAfterRun === 1 && validateEmail(currentConfig.rememberedEmail) && allErrorMsg.length > 0) {
-        sendEmail(currentConfig.rememberedEmail, () => {
+    if (config.autoSendEmailAfterRun === 1 && validateEmail(config.rememberedEmail) && allErrorMsg.length > 0) {
+        sendEmail(config.rememberedEmail, () => {
             allTestsCompleted = true;
             scheduleAutoRerun();
         });
@@ -1340,7 +1325,7 @@ function autoSendEmailOrShowPrompt(logBlankLine) {
  */
 (function main() {
     loadOrInitConfig(() => {
-        currentRunMode = RunMode.standard;
+        runMode = "";
         fetchLocationsJson();
     });
 
@@ -1410,8 +1395,18 @@ function autoSendEmailOrShowPrompt(logBlankLine) {
                 confirmSendEmail(line);
                 break;
 
-            default:
-                handleEmailRemember(line);
+            setTimeout(() => {
+                console.log("");
+                typeKeyPrompt();
+            }, 50);
+        } else if (runMode === "R") {
+            confirmRerun(line);
+        } else if (runMode === "E1") {
+            handleEmailAddressInput(line);
+        } else if (runMode === "E2") {
+            confirmSendEmail(line);
+        } else if (["E0", "E3", "E4", "E5"].includes(runMode)) {
+            handleEmailRemember(line);
         }
     });
 })();
