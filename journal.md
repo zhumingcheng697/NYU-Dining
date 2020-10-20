@@ -136,4 +136,10 @@
 
 ## Week 8
 
-### Monday: October 19, 2020
+### Monday: October 19, 2020 (2 hours)
+
+- Fixed excessive errors
+
+- Tried to merge branches (but messed up)
+
+- Created `v1.0.1` release

@@ -317,35 +317,35 @@ function setLocationStatus(location, status) {
 function fetchLocationsJson() {
     console.log(`${logStyle.fg.white}------Loading "locations.json"------${logStyle.reset}`);
     nodeFetch(locationsJsonUrl)
-    .then(res => {
-        console.log(`${logStyle.fg.green}"locations.json" load succeeded${logStyle.reset}`);
-        return res.text();
-    }).then(text => {
-        try {
-            locationsJson = JSON.parse(`${text}`);
-            locationsJson.forEach(loc => {
-                loc["schedules"] = typeof loc["schedules"] === "undefined" ? -1 : loc["schedules"].length;
-                delete loc["address"];
-                delete loc["type"];
-            });
+        .then(res => {
+            console.log(`${logStyle.fg.green}"locations.json" load succeeded${logStyle.reset}`);
+            return res.text();
+        }).then(text => {
+            try {
+                locationsJson = JSON.parse(`${text}`);
+                locationsJson.forEach(loc => {
+                    loc["schedules"] = typeof loc["schedules"] === "undefined" ? -1 : loc["schedules"].length;
+                    delete loc["address"];
+                    delete loc["type"];
+                });
 
-            console.log(`${logStyle.fg.green}"locations.json" parse succeeded${logStyle.reset}`);
+                console.log(`${logStyle.fg.green}"locations.json" parse succeeded${logStyle.reset}`);
 
-            if (locationsJson.length > 0) {
-                console.log(`${logStyle.fg.green}${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} found in "locations.json"${logStyle.reset}`);
-                fetchLocationsXml();
-            } else {
-                logAndPush(`${logStyle.fg.red}Fatal Error: No locations found in "locations.json"${logStyle.reset}`, "e");
+                if (locationsJson.length > 0) {
+                    console.log(`${logStyle.fg.green}${locationsJson.length} location${locationsJson.length === 1 ? "" : "s"} found in "locations.json"${logStyle.reset}`);
+                    fetchLocationsXml();
+                } else {
+                    logAndPush(`${logStyle.fg.red}Fatal Error: No locations found in "locations.json"${logStyle.reset}`, "e");
+                    terminateTest();
+                }
+            } catch (e) {
+                logAndPush(`${logStyle.fg.red}Fatal Error: "locations.json" parse failed${logStyle.reset}`, "e");
                 terminateTest();
             }
-        } catch (e) {
-            logAndPush(`${logStyle.fg.red}Fatal Error: "locations.json" parse failed${logStyle.reset}`, "e");
+        }).catch(() => {
+            logAndPush(`${logStyle.fg.red}Fatal Error: "locations.json" load failed${logStyle.reset}`, "e");
             terminateTest();
-        }
-    }).catch(() => {
-        logAndPush(`${logStyle.fg.red}Fatal Error: "locations.json" load failed${logStyle.reset}`, "e");
-        terminateTest();
-    });
+        });
 }
 
 /**
@@ -358,57 +358,57 @@ function fetchLocationsJson() {
 function fetchLocationsXml() {
     console.log(`${logStyle.fg.white}------Loading "locations.xml"------${logStyle.reset}`);
     nodeFetch(locationsXmlUrl)
-    .then(res => {
-        console.log(`${logStyle.fg.green}"locations.xml" load succeeded${logStyle.reset}`);
-        return res.text();
-    }).then(text => {
-        parseXml(text, (err, xml) => {
-            if (xml) {
-                console.log(`${logStyle.fg.green}"locations.xml" parse succeeded${logStyle.reset}`);
-                try {
-                    locationsXml = xml["locations"]["location"];
+        .then(res => {
+            console.log(`${logStyle.fg.green}"locations.xml" load succeeded${logStyle.reset}`);
+            return res.text();
+        }).then(text => {
+            parseXml(text, (err, xml) => {
+                if (xml) {
+                    console.log(`${logStyle.fg.green}"locations.xml" parse succeeded${logStyle.reset}`);
+                    try {
+                        locationsXml = xml["locations"]["location"];
 
-                    if (locationsXml.length > 0) {
-                        locationsXml.forEach(loc => {
-                            try {
-                                loc["name"] = loc["name"][0];
-                                loc["mapName"] = loc["mapName"][0];
+                        if (locationsXml.length > 0) {
+                            locationsXml.forEach(loc => {
+                                try {
+                                    loc["name"] = loc["name"][0];
+                                    loc["mapName"] = loc["mapName"][0];
 
-                                if (loc.name === loc.mapName) {
-                                    delete loc.mapName;
-                                } else {
-                                    logAndPush(`${logStyle.fg.red}Location name "${loc.name}" does not match map name "${loc.mapName}" in "locations.xml"${logStyle.reset}`, "e");
+                                    if (loc.name === loc.mapName) {
+                                        delete loc.mapName;
+                                    } else {
+                                        logAndPush(`${logStyle.fg.red}Location name "${loc.name}" does not match map name "${loc.mapName}" in "locations.xml"${logStyle.reset}`, "e");
+                                    }
+
+                                    loc["id"] = loc["eventsFeedConfig"][0]["locationID"][0];
+                                    loc["menuURL"] = loc["eventsFeedConfig"][0]["menuURL"][0];
+                                    delete loc["eventsFeedConfig"];
+                                } catch (e) {
+                                    logAndPush(`${logStyle.fg.red}Field "eventsFeedConfig" does not exist for "${loc["name"]}" in "locations.xml"${logStyle.reset}`, "e");
                                 }
+                            });
 
-                                loc["id"] = loc["eventsFeedConfig"][0]["locationID"][0];
-                                loc["menuURL"] = loc["eventsFeedConfig"][0]["menuURL"][0];
-                                delete loc["eventsFeedConfig"];
-                            } catch (e) {
-                                logAndPush(`${logStyle.fg.red}Field "eventsFeedConfig" does not exist for "${loc["name"]}" in "locations.xml"${logStyle.reset}`, "e");
-                            }
-                        });
-
-                        setTimeout(() => {
-                            console.log(`${logStyle.fg.green}${locationsXml.length} location${locationsXml.length === 1 ? "" : "s"} found in "locations.xml"${logStyle.reset}`);
-                            fetchLocationsFromSite();
-                        }, 50);
-                    } else {
-                        logAndPush(`${logStyle.fg.red}Fatal Error: No locations found in "locations.xml"${logStyle.reset}`, "e");
+                            setTimeout(() => {
+                                console.log(`${logStyle.fg.green}${locationsXml.length} location${locationsXml.length === 1 ? "" : "s"} found in "locations.xml"${logStyle.reset}`);
+                                fetchLocationsFromSite();
+                            }, 50);
+                        } else {
+                            logAndPush(`${logStyle.fg.red}Fatal Error: No locations found in "locations.xml"${logStyle.reset}`, "e");
+                            terminateTest();
+                        }
+                    } catch (e) {
+                        logAndPush(`${logStyle.fg.red}Fatal Error: Field "locations" does not exist in "locations.xml"${logStyle.reset}`, "e");
                         terminateTest();
                     }
-                } catch (e) {
-                    logAndPush(`${logStyle.fg.red}Fatal Error: Field "locations" does not exist in "locations.xml"${logStyle.reset}`, "e");
+                } else {
+                    logAndPush(`${logStyle.fg.red}Fatal Error: "locations.xml" parse failed${logStyle.reset}`, "e");
                     terminateTest();
                 }
-            } else {
-                logAndPush(`${logStyle.fg.red}Fatal Error: "locations.xml" parse failed${logStyle.reset}`, "e");
-                terminateTest();
-            }
+            });
+        }).catch(() => {
+            logAndPush(`${logStyle.fg.red}Fatal Error: "locations.xml" load failed${logStyle.reset}`, "e");
+            terminateTest();
         });
-    }).catch(() => {
-        logAndPush(`${logStyle.fg.red}Fatal Error: "locations.xml" load failed${logStyle.reset}`, "e");
-        terminateTest();
-    });
 }
 
 /**
@@ -421,33 +421,33 @@ function fetchLocationsXml() {
 function fetchLocationsFromSite() {
     console.log(`${logStyle.fg.white}------Loading locations from ${useDevSite ? "dev" : "production"} site------${logStyle.reset}`);
     nodeFetch(useDevSite ? devSiteUrl : prodSiteUrl)
-    .then(res => {
-        const statusPrefix = Math.floor(res.status / 100);
-        console.log(`${statusPrefix === 2 ? logStyle.fg.green : ([4, 5].includes(statusPrefix) ? logStyle.fg.red : "")}${res.status} ${res.statusText}${logStyle.reset}`);
-        console.log(`${logStyle.fg.green}${useDevSite ? "Dev" : "Production"} site load succeeded${logStyle.reset}`);
-        return res.text();
-    }).then(text => {
-        const site = HTMLParser.parse(`${text}`);
-        if (site.valid) {
-            console.log(`${logStyle.fg.green}${useDevSite ? "Dev" : "Production"} site parse succeeded${logStyle.reset}`);
-            const locationNames = site.querySelectorAll(`#kgoui_Rcontent_I1_Rcontent_I1_Ritems li a div.kgoui_list_item_textblock span`).map(e => he.decode(e.childNodes[0].rawText));
+        .then(res => {
+            const statusPrefix = Math.floor(res.status / 100);
+            console.log(`${statusPrefix === 2 ? logStyle.fg.green : ([4, 5].includes(statusPrefix) ? logStyle.fg.red : "")}${res.status} ${res.statusText}${logStyle.reset}`);
+            console.log(`${logStyle.fg.green}${useDevSite ? "Dev" : "Production"} site load succeeded${logStyle.reset}`);
+            return res.text();
+        }).then(text => {
+            const site = HTMLParser.parse(`${text}`);
+            if (site.valid) {
+                console.log(`${logStyle.fg.green}${useDevSite ? "Dev" : "Production"} site parse succeeded${logStyle.reset}`);
+                const locationNames = site.querySelectorAll(`#kgoui_Rcontent_I1_Rcontent_I1_Ritems li a div.kgoui_list_item_textblock span`).map(e => he.decode(e.childNodes[0].rawText));
 
-            if (locationNames.length > 0) {
-                siteLocations = locationNames;
-                console.log(`${logStyle.fg.green}${locationNames.length} location${locationsXml.length === 1 ? "" : "s"} found on ${useDevSite ? "dev" : "production"} site${logStyle.reset}\n`);
-                validateLocation();
+                if (locationNames.length > 0) {
+                    siteLocations = locationNames;
+                    console.log(`${logStyle.fg.green}${locationNames.length} location${locationsXml.length === 1 ? "" : "s"} found on ${useDevSite ? "dev" : "production"} site${logStyle.reset}\n`);
+                    validateLocation();
+                } else {
+                    logAndPush(`${logStyle.fg.red}Fatal Error: No locations found on ${useDevSite ? "dev" : "production"} site${logStyle.reset}`, "e");
+                    terminateTest();
+                }
             } else {
-                logAndPush(`${logStyle.fg.red}Fatal Error: No locations found on ${useDevSite ? "dev" : "production"} site${logStyle.reset}`, "e");
+                logAndPush(`${logStyle.fg.red}Fatal Error: ${useDevSite ? "dev" : "production"} site parse failed${logStyle.reset}`, "e");
                 terminateTest();
             }
-        } else {
-            logAndPush(`${logStyle.fg.red}Fatal Error: ${useDevSite ? "dev" : "production"} site parse failed${logStyle.reset}`, "e");
+        }).catch(() => {
+            logAndPush(`${logStyle.fg.red}Fatal Error: ${useDevSite ? "dev" : "production"} site load failed${logStyle.reset}`, "e");
             terminateTest();
-        }
-    }).catch(() => {
-        logAndPush(`${logStyle.fg.red}Fatal Error: ${useDevSite ? "dev" : "production"} site load failed${logStyle.reset}`, "e");
-        terminateTest();
-    });
+        });
 }
 
 /**
@@ -541,42 +541,42 @@ function validateLocation(jsonIndex = 0) {
  */
 function fetchMenu(url, location, handler = () => {}) {
     nodeFetch(url)
-    .then(res => {
-        console.log(`${logStyle.fg.green}Menu load succeeded ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`);
-        return res.text();
-    }).then(text => {
-        try {
-            let menu = JSON.parse(`${text}`);
-            console.log(`${logStyle.fg.green}Menu parse succeeded ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`);
-            menu["menus"] = (typeof menu["menus"] === "undefined" ? -1 : menu["menus"].length);
+        .then(res => {
+            console.log(`${logStyle.fg.green}Menu load succeeded ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`);
+            return res.text();
+        }).then(text => {
+            try {
+                let menu = JSON.parse(`${text}`);
+                console.log(`${logStyle.fg.green}Menu parse succeeded ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`);
+                menu["menus"] = (typeof menu["menus"] === "undefined" ? -1 : menu["menus"].length);
 
-            if (menu.menus === -1) {
-                logAndPush(`${logStyle.fg.red}Field "menus" does not exist ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`, "e");
-                setLocationStatus(location, LocationStatus.menuError);
-                checkSite(location);
-            } else if (menu.menus === 0) {
-                logAndPush(`${logStyle.fg.red}No menus found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`, "e");
-                setLocationStatus(location, LocationStatus.menuError);
-                checkSite(location);
-            } else {
-                console.log(`${logStyle.fg.green}${menu.menus} menu${menu.menus === 1 ? "" : "s"} found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`);
-                if (checkSite(location)) {
-                    setLocationStatus(location, LocationStatus.passed);
+                if (menu.menus === -1) {
+                    logAndPush(`${logStyle.fg.red}Field "menus" does not exist ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`, "e");
+                    setLocationStatus(location, LocationStatus.menuError);
+                    checkSite(location);
+                } else if (menu.menus === 0) {
+                    logAndPush(`${logStyle.fg.red}No menus found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`, "e");
+                    setLocationStatus(location, LocationStatus.menuError);
+                    checkSite(location);
+                } else {
+                    console.log(`${logStyle.fg.green}${menu.menus} menu${menu.menus === 1 ? "" : "s"} found ${location ? `for "${location}"` : `at "${url}"`}${logStyle.reset}`);
+                    if (checkSite(location)) {
+                        setLocationStatus(location, LocationStatus.passed);
+                    }
                 }
+                handler();
+            } catch (e) {
+                logAndPush(`${logStyle.fg.red}Menu parse failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`, "e");
+                setLocationStatus(location, LocationStatus.menuError);
+                checkSite(location);
+                handler();
             }
-            handler();
-        } catch (e) {
-            logAndPush(`${logStyle.fg.red}Menu parse failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`, "e");
+        }).catch(() => {
+            logAndPush(`${logStyle.fg.red}Menu load failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`, "e");
             setLocationStatus(location, LocationStatus.menuError);
             checkSite(location);
             handler();
-        }
-    }).catch(() => {
-        logAndPush(`${logStyle.fg.red}Menu load failed ${location ? `for "${location}"` : `from "${url}"`}${logStyle.reset}`, "e");
-        setLocationStatus(location, LocationStatus.menuError);
-        checkSite(location);
-        handler();
-    });
+        });
 }
 
 /**
@@ -1270,16 +1270,16 @@ function sendEmail(recipient, finalHandler = () => {}) {
     console.log(`${logStyle.fg.white}------Emailing logs to "${recipient}"------${logStyle.reset}`);
 
     transport.sendMail(composeMessage(recipient))
-    .then(() => {
-        console.log(`${logStyle.fg.green}Email send succeeded${logStyle.reset}`);
-    }).catch((e) => {
-        console.log(`${logStyle.fg.red}Email send failed: ${e}${logStyle.reset}`);
-    }).finally(() => {
-        finalHandler();
-        console.log("");
-        typeKeyPrompt();
-        currentRunMode = RunMode.standard;
-    });
+        .then(() => {
+            console.log(`${logStyle.fg.green}Email send succeeded${logStyle.reset}`);
+        }).catch((e) => {
+            console.log(`${logStyle.fg.red}Email send failed: ${e}${logStyle.reset}`);
+        }).finally(() => {
+            finalHandler();
+            console.log("");
+            typeKeyPrompt();
+            currentRunMode = RunMode.standard;
+        });
 }
 
 /**
