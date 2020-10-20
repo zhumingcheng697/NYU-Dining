@@ -133,3 +133,7 @@
 - Added support for logging location status definitions
 
 - Updated `README.md`
+
+## Week 8
+
+### Monday: October 19, 2020
