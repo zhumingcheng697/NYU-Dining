@@ -60,6 +60,7 @@
     ```
     {
       "devMode": true,
+      "autoQuit": false,
       "autoRunIntervalInMinute": <positive_interval_in_minute>,
       "autoSendEmailAfterRun": 1,
       "sendEmailAfterShowingErrors": 0,
@@ -73,6 +74,7 @@
     ```
     {
       "devMode": true,
+      "autoQuit": false,
       "autoRunIntervalInMinute": <positive_interval_in_minute>,
       "autoSendEmailAfterRun": 0,
       "sendEmailAfterShowingErrors": 1,
@@ -88,6 +90,7 @@
     ```
     {
       "devMode": true,
+      "autoQuit": false,
       "autoRunIntervalInMinute": <positive_interval_in_minute>,
       "autoSendEmailAfterRun": 0,
       "sendEmailAfterShowingErrors": 0,
@@ -116,9 +119,13 @@
     
     > Set to `true` to achieve a higher level of automation and flexibility, or set to `false` to allow the users to modify the configuration directly within the CLI using keyboard interaction.
 
+- `autoQuit` - **Required**. *Boolean*. Determines how the program behaves after the test has finished running. Default to `false`.
+                
+    > Set to `true` to immediately quit the program after the test has finished running and the email, if configured, has been sent, or set to `false` to let the program to continue listening for keyboard input.
+
 - `autoRunIntervalInMinute` - **Required**. *Number*. Determines if and how often the program should auto rerun. Default to `0`.
     
-    > Set to a positive number and set `devMode` to `true` to let the program automatically rerun after the set interval (in minute).
+    > Set to a positive number and set `devMode` to `true` and `autoQuit` to `false` to let the program automatically rerun after the set interval (in minute).
 
 - `autoSendEmailAfterRun` - **Required**. *Number*. Determines if the program should automatically email the users after the test finishes should errors occur. Default to `0`. Valid values are `-1`, `0`, and `1`.
     
