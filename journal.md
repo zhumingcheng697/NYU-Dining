@@ -143,3 +143,13 @@
 - Tried to merge branches (but messed up)
 
 - Created `v1.0.1` release
+
+## Week 9
+
+### Friday: October 30, 2020 (2 hours)
+
+- Added option to auto-quit after run
+
+- Reworked on blank-line-logging
+
+- Updated `README.md`
