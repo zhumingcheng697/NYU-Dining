@@ -1291,7 +1291,7 @@ function autoSendEmailOrShowPrompt(logBlankLine) {
      */
     function scheduleAutoRerun() {
         if (currentConfig.devMode && currentConfig.autoRunIntervalInMinute > 0 && !currentConfig.autoQuit) {
-            console.log(`${logStyle.fg.white}------Automatically rerunning in ${currentConfig.autoRunIntervalInMinute} minute${currentConfig.autoRunIntervalInMinute === 1 ? "" : "s"}------${logStyle.reset}`);
+            console.log(`${logStyle.fg.white}\n------Automatically rerunning in ${currentConfig.autoRunIntervalInMinute} minute${currentConfig.autoRunIntervalInMinute === 1 ? "" : "s"}------${logStyle.reset}`);
             autoRerunId = setTimeout(rerunTest, currentConfig.autoRunIntervalInMinute * 60000);
         }
     }
