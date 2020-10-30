@@ -63,7 +63,7 @@
       "autoQuit": false,
       "autoRunIntervalInMinute": <positive_interval_in_minute>,
       "autoSendEmailAfterRun": 1,
-      "sendEmailAfterShowingErrors": 0,
+      "sendEmailAfterLoggingErrors": 0,
       "rememberEmail": 0,
       "rememberedEmail": <your_email_address>
     }
@@ -77,7 +77,7 @@
       "autoQuit": false,
       "autoRunIntervalInMinute": <positive_interval_in_minute>,
       "autoSendEmailAfterRun": 0,
-      "sendEmailAfterShowingErrors": 1,
+      "sendEmailAfterLoggingErrors": 1,
       "rememberEmail": 0,
       "rememberedEmail": ""
     }
@@ -93,7 +93,7 @@
       "autoQuit": false,
       "autoRunIntervalInMinute": <positive_interval_in_minute>,
       "autoSendEmailAfterRun": 0,
-      "sendEmailAfterShowingErrors": 0,
+      "sendEmailAfterLoggingErrors": 0,
       "rememberEmail": 0,
       "rememberedEmail": ""
     }
@@ -131,7 +131,7 @@
     
     > Set to `1` and set `rememberedEmail` to a valid email address to always automatically receive an email after each run of the test and if at least one error has occurred, or set to `-1` to never receive any automatic email notifications after each run.
 
-- `sendEmailAfterShowingErrors` - **Required**. *Number*. Determines if the program should email the users after the user prints all the previous errors. Default to `0`. Valid values are `-1`, `0`, and `1`.
+- `sendEmailAfterLoggingErrors` - **Required**. *Number*. Determines if the program should email the users after the user prints all the previous errors. Default to `0`. Valid values are `-1`, `0`, and `1`.
     
     > Set to `1` to always be prompted to send an email after having asked the program to log all the previously thrown error messages (and optionally set `rememberedEmail` to a valid email address to let the program automatically use that email address), or set to `-1` to never be prompted to send any email notifications after asking the program to log error messages.
 

@@ -3,7 +3,7 @@
   "autoQuit": false,
   "autoRunIntervalInMinute": 0,
   "autoSendEmailAfterRun": 0,
-  "sendEmailAfterShowingErrors": 0,
+  "sendEmailAfterLoggingErrors": 0,
   "rememberEmail": 0,
   "rememberedEmail": ""
 }
