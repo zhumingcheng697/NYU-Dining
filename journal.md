@@ -156,7 +156,7 @@
 
 ## Week 11
 
-### Monday: November 9, 2020 (1 hour)
+### Monday: November 9, 2020 (2 hours)
 
 - Removed SMTP credentials from source code and loading it dynamically from `email.json` now
 
