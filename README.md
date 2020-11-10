@@ -30,7 +30,25 @@
    
 3. (Optionally) [configure](#typical-configurations) [`config.json`](#properties-in-config-file).
 
-4. Run the script `nyu-dining-test.js`.
+4. If you want to enable any email feature, configure `email.json`.
+    
+    ```
+    {
+      "host": <your_host>,
+      "port": <your_port>,
+      "auth": {
+        "user": <your_username>,
+        "pass": <your_password>
+      },
+      
+      ...
+      
+    }
+    ```
+
+    > Read more [here](https://ourcodeworld.com/articles/read/264/how-to-send-an-email-gmail-outlook-and-zoho-using-nodemailer-in-node-js) on how to configure sender email with various popular email services.
+
+5. Run the script `nyu-dining-test.js`.
 
     ```
     $ node nyu-dining-test.js
@@ -51,7 +69,7 @@
    > $ DEV_SITE=1 npm start
    > ```
    
-5. Follow the instructions in the CLI and start testing!
+6. Follow the instructions in the CLI and start testing!
 
 ## Typical Configurations
 
