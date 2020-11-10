@@ -76,24 +76,7 @@ const rl = () => {
  *
  * @link https://ourcodeworld.com/articles/read/264/how-to-send-an-email-gmail-outlook-and-zoho-using-nodemailer-in-node-js
  */
-const transport = nodemailer.createTransport({
-    // host: "smtp.mailtrap.io",
-    // port: 2525,
-    // auth: {
-    //     user: "ae677f881a6c52",
-    //     pass: "80d9ee8bff404c"
-    // }
-    host: "smtp-mail.outlook.com",
-    secureConnection: false,
-    port: 587,
-    tls: {
-        ciphers:'SSLv3'
-    },
-    auth: {
-        user: "nyu-dining-test@outlook.com",
-        pass: "Dining*2020"
-    }
-});
+let transport = null;
 
 /**
  * All available statuses of a dining location.
@@ -229,7 +212,7 @@ let fatalErrorOccurred = false;
 function loadOrInitConfig(handler = () => {}) {
     console.log(`${logStyle.fg.white}------Loading "config.json"------${logStyle.reset}`);
 
-    fs.readFile("config.json", "utf-8", ((err, data) => {
+    fs.readFile("config.json", "utf-8", (err, data) => {
         if (err) {
             console.error(`${logStyle.fg.red}File "config.json" not found${logStyle.reset}`);
         } else {
@@ -259,9 +242,9 @@ function loadOrInitConfig(handler = () => {}) {
                     }
                 }
 
-                console.log(`${logStyle.fg.red}Configuration load failed${logStyle.reset}`);
+                console.error(`${logStyle.fg.red}Configuration load failed${logStyle.reset}`);
             } catch (e) {
-                console.log(`${logStyle.fg.red}Configuration load failed${logStyle.reset}`);
+                console.error(`${logStyle.fg.red}Configuration load failed${logStyle.reset}`);
             }
         }
 
@@ -269,7 +252,7 @@ function loadOrInitConfig(handler = () => {}) {
             console.log(`${logStyle.fg.white}------Saving default configuration------${logStyle.reset}`);
             saveConfig(handler);
         }, 50);
-    }));
+    });
 }
 
 /**
@@ -1229,10 +1212,50 @@ function rerunTest() {
  */
 function sendEmail(recipient, finalHandler = () => {}) {
     /**
-     * Composes new email message for sendEmail to send.
+     * Resets the program after email send succeeded or failed.
+     *
+     * @return {void}
+     */
+    function done() {
+        finalHandler();
+        if (!currentConfig.autoQuit) {
+            console.log("");
+            typeKeyPrompt();
+        }
+        currentRunMode = RunMode.standard;
+    }
+
+    /**
+     * Tries to set nodemailer transport by loading (sender) email info from local.
+     *
+     * @param handler {function} Runs after nodemailer transport set succeeded or failed
+     * @see transport
+     * @return {void}
+     */
+    function setTransport(handler = () => {}) {
+        fs.readFile("email.json", "utf-8", (err, data) => {
+            if (err) {
+                console.error(`${logStyle.fg.red}Please provide correct sender email configuration in "email.json" to enable email features${logStyle.reset}`);
+            } else {
+                try {
+                    const parsedEmail = JSON.parse(data);
+                    transport = nodemailer.createTransport(parsedEmail);
+                    handler(true);
+                    return;
+                } catch (e) {
+                    console.error(`${logStyle.fg.red}Please provide correct sender email configuration in "email.json" to enable email features${logStyle.reset}`);
+                }
+            }
+
+            handler(false);
+        });
+    }
+
+    /**
+     * Composes new email message for sendMessage to send.
      *
      * @param recipient {string} Email address to send the email to
-     * @see sendEmail
+     * @see sendMessage
      * @return {Object}
      */
     function composeMessage(recipient) {
@@ -1258,21 +1281,40 @@ function sendEmail(recipient, finalHandler = () => {}) {
         };
     }
 
-    console.log(`\n${logStyle.fg.white}------Emailing logs to "${recipient}"------${logStyle.reset}`);
+    /**
+     * Sends the actual email.
+     *
+     * @return {void}
+     */
+    function sendMessage() {
+        console.log(`\n${logStyle.fg.white}------Emailing logs to "${recipient}"------${logStyle.reset}`);
 
-    transport.sendMail(composeMessage(recipient))
-        .then(() => {
-            console.log(`${logStyle.fg.green}Email send succeeded${logStyle.reset}`);
-        }).catch((e) => {
-            console.log(`${logStyle.fg.red}Email send failed: ${e}${logStyle.reset}`);
-        }).finally(() => {
-            finalHandler();
-            if (!currentConfig.autoQuit) {
-                console.log("");
-                typeKeyPrompt();
+        try {
+            transport.sendMail(composeMessage(recipient))
+                .then(() => {
+                    console.log(`${logStyle.fg.green}Email send succeeded${logStyle.reset}`);
+                }).catch((e) => {
+                    console.error(`${logStyle.fg.red}Email send failed: ${e}${logStyle.reset}`);
+                }).finally(() => {
+                    done();
+                });
+        } catch (e) {
+            console.error(`${logStyle.fg.red}Email send failed: ${e}${logStyle.reset}`);
+            done();
+        }
+    }
+
+    if (transport) {
+        sendMessage();
+    } else {
+        setTransport((set) => {
+            if (set) {
+                sendMessage();
+            } else {
+                done();
             }
-            currentRunMode = RunMode.standard;
         });
+    }
 }
 
 /**
