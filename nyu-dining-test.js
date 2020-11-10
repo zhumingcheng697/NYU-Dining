@@ -79,6 +79,13 @@ const rl = () => {
 let transport = null;
 
 /**
+ * Sender email address.
+ *
+ * @type {string}
+ */
+let senderEmail = "";
+
+/**
  * All available statuses of a dining location.
  *
  * @type {Object.<string, string>}
@@ -1239,6 +1246,7 @@ function sendEmail(recipient, finalHandler = () => {}) {
             } else {
                 try {
                     const parsedEmail = JSON.parse(data);
+                    senderEmail = parsedEmail && parsedEmail.auth && parsedEmail.auth.user || "nyu-dining-test@outlook.com";
                     transport = nodemailer.createTransport(parsedEmail);
                     handler(true);
                     return;
@@ -1260,7 +1268,7 @@ function sendEmail(recipient, finalHandler = () => {}) {
      */
     function composeMessage(recipient) {
         return {
-            from: "nyu-dining-test@outlook.com",
+            from: senderEmail,
             to: recipient,
             subject: `NYU Dining Testing Error Report (${(new Date()).toLocaleString(undefined, {
                 month: "short", day: "numeric", hour: "numeric", minute: "numeric", timeZoneName: "short"
