@@ -153,3 +153,13 @@
 - Reworked on blank-line-logging
 
 - Updated `README.md`
+
+## Week 11
+
+### Monday: November 9, 2020 (1 hour)
+
+- Removed SMTP credentials from source code and loading it dynamically from `email.json` now
+
+- Updated `README.md`
+
+- Updated `package.json`
