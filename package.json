@@ -1,7 +1,13 @@
 {
   "name": "nyu-dining-test",
   "version": "1.0.1",
+  "description": "A Script that Automatically Fetches NYU Dining Location and Menu Data, Parses and Validates it, and Emails the Users Should Errors Occur",
   "license": "CC-BY-NC-SA-4.0",
+  "author": {
+    "name": "McCoy Zhu",
+    "email": "mccoy.zhu@nyu.edu",
+    "url": "https://github.com/zhumingcheng697"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/zhumingcheng697/NYU-Dining-Test.git"
