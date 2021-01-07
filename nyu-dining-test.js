@@ -142,7 +142,7 @@ let currentRunMode = RunMode.configuring;
 /**
  * Timeout id for auto rerun.
  *
- * @type {number}
+ * @type {NodeJS.Timeout}
  */
 let autoRerunId;
 
@@ -716,7 +716,7 @@ function noXmlMatchLocationsReport(showNextStep = false) {
 
     if (showNextStep) {
         setTimeout(() => {
-            noMenuLocationsReport(showNextStep, noXmlMatchLocations.length > 0);
+            noMenuLocationsReport(showNextStep, true);
         }, 50);
     }
 }
@@ -747,7 +747,7 @@ function noMenuLocationsReport(showNextStep = false, logBlankLine = false) {
 
     if (showNextStep) {
         setTimeout(() => {
-            noSiteMatchLocationsReport(showNextStep, noMenuLocations.length > 0);
+            noSiteMatchLocationsReport(showNextStep, noMenuLocations.length > 0 || logBlankLine);
         }, 50);
     }
 }
@@ -777,7 +777,7 @@ function noSiteMatchLocationsReport(showNextStep = false, logBlankLine = false) 
 
     if (showNextStep) {
         setTimeout(() => {
-            excessLocationsReport(showNextStep, noSiteMatchLocations.length > 0);
+            excessLocationsReport(showNextStep, noSiteMatchLocations.length > 0 || logBlankLine);
         }, 50);
     }
 }
@@ -840,7 +840,7 @@ function excessLocationsReport(showNextStep = false, logBlankLine = false) {
         }
 
         if (showNextStep) {
-            autoSendEmailOrShowPrompt(logBlankLine || siteExcessLocations.length > 0);
+            autoSendEmailOrShowPrompt(siteExcessLocations.length > 0 || logBlankLine);
         }
     }
 
