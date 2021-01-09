@@ -1,6 +1,6 @@
 {
   "name": "nyu-dining-test",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A Script that Automatically Fetches NYU Dining Location and Menu Data, Parses and Validates it, and Emails the Users Should Errors Occur",
   "license": "CC-BY-NC-SA-4.0",
   "author": {
