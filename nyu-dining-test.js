@@ -1271,7 +1271,7 @@ function sendEmail(recipient, finalHandler = () => {}) {
             from: senderEmail,
             to: recipient,
             subject: `NYU Dining Testing Error Report (${(new Date()).toLocaleString(undefined, {
-                month: "short", day: "numeric", hour: "numeric", minute: "numeric", timeZoneName: "short"
+                year: "numeric", month: "short", day: "numeric", weekday: "short", hour: "numeric", minute: "numeric", timeZoneName: "short"
             })})`,
             html: `<!DOCTYPE html><html lang="en"><body><header><h2>The following error${allErrorMsg.length === 1 ? " was" : "s were"} thrown during the last run of the test:</h2></header>${allErrorMsg.map(msg => {
                 let temp = msg.replace(logStyle.fg.red, "<p style='color: red; font-weight: bold'>").replace(logStyle.reset, "</p>");
