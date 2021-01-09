@@ -1,10 +1,10 @@
-const fs = require('fs');
+const fs = require("fs");
 const he = require("he");
-const readline = require('readline');
+const readline = require("readline");
 const nodeFetch = require("node-fetch");
 const nodemailer = require("nodemailer");
 const parseXml = require("xml2js").parseString;
-const HTMLParser = require('node-html-parser');
+const HTMLParser = require("node-html-parser");
 
 const locationsJsonUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.json";
 const locationsXmlUrl = "https://s3.amazonaws.com/mobile.nyu.edu/dining/locations.xml";
@@ -69,7 +69,7 @@ const rl = () => {
         output: process.stdout,
         terminal: false
     });
-}
+};
 
 /**
  * Configures nodemailer to be able to send emails.
@@ -98,7 +98,7 @@ const LocationStatus = {
     xmlExcess: "* XML Excess *",
     siteExcess: "* Site Excess *",
     otherError: "* Other Error *"
-}
+};
 
 /**
  * All available states of the program.
@@ -600,7 +600,7 @@ function checkSite(location, shouldExist = true) {
  */
 function checkForXmlExcess() {
     console.log(`${logStyle.fg.white}------Checking for excesses in XML------${logStyle.reset}`);
-    let excessAmt = 0
+    let excessAmt = 0;
     for (const location of locationsXml.map(loc => loc.name)) {
         if (typeof locationResults[location] === "undefined") {
             excessAmt += 1;
@@ -630,7 +630,7 @@ function checkForXmlExcess() {
  */
 function checkForSiteExcess() {
     console.log(`${logStyle.fg.white}------Checking for excesses on ${useDevSite ? "dev" : "production"} site------${logStyle.reset}`);
-    let excessAmt = 0
+    let excessAmt = 0;
     for (const location of siteLocations) {
         if (typeof locationResults[location] === "undefined") {
             excessAmt += 1;
@@ -1271,7 +1271,13 @@ function sendEmail(recipient, finalHandler = () => {}) {
             from: senderEmail,
             to: recipient,
             subject: `NYU Dining Testing Error Report (${(new Date()).toLocaleString(undefined, {
-                year: "numeric", month: "short", day: "numeric", weekday: "short", hour: "numeric", minute: "numeric", timeZoneName: "short"
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                weekday: "short",
+                hour: "numeric",
+                minute: "numeric",
+                timeZoneName: "short"
             })})`,
             html: `<!DOCTYPE html><html lang="en"><body><header><h2>The following error${allErrorMsg.length === 1 ? " was" : "s were"} thrown during the last run of the test:</h2></header>${allErrorMsg.map(msg => {
                 let temp = msg.replace(logStyle.fg.red, "<p style='color: red; font-weight: bold'>").replace(logStyle.reset, "</p>");
@@ -1384,7 +1390,7 @@ function autoSendEmailOrShowPrompt(logBlankLine) {
  * @return {void}
  */
 function handleKeyboardInputs() {
-    rl().on('line', (line) => {
+    rl().on("line", (line) => {
         if (!allTestsCompleted) {
             return;
         }
@@ -1400,7 +1406,7 @@ function handleKeyboardInputs() {
                         break;
                     case "R":
                         currentRunMode = RunMode.willRerun;
-                        console.warn(`${logStyle.fg.red}Will rerun all tests. Continue? (y/n)${logStyle.reset}`)
+                        console.warn(`${logStyle.fg.red}Will rerun all tests. Continue? (y/n)${logStyle.reset}`);
                         return;
                     case "H":
                         additionalHelpPrompt();
